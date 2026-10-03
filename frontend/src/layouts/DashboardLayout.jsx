@@ -1,21 +1,20 @@
-import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 
 export default function DashboardLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--color-bg)]">
-      {/* Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar onMenuToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-        <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Topbar />
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* Consistent page gutter: 28px horizontal, 28px vertical on large screens */}
+          <div className="max-w-[1440px] mx-auto w-full px-6 py-6 lg:px-8 lg:py-7">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

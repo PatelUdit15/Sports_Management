@@ -1,90 +1,91 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, CalendarDays, ShoppingBag,
-  Coffee, UserCog, DollarSign, MessageSquare, Building2,
-  BarChart3, Settings as SettingsIcon, ChevronLeft, ChevronRight
+  LayoutDashboard, Users, Trophy, ShoppingBag, Coffee,
+  BadgeCheck, CreditCard, HelpCircle, Building2, BarChart2,
+  Settings, ChevronRight,
 } from 'lucide-react'
 
-const navGroups = [
+const nav = [
   {
-    label: 'Main',
     items: [
-      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/members', icon: Users, label: 'Members' },
-      { to: '/court-bookings', icon: CalendarDays, label: 'Court Bookings' },
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/members',   label: 'Members',   icon: Users },
     ],
   },
   {
-    label: 'Commerce',
     items: [
-      { to: '/shop', icon: ShoppingBag, label: 'Shop & Inventory' },
-      { to: '/cafe', icon: Coffee, label: 'Cafe / Bar' },
+      { to: '/court-bookings', label: 'Court Bookings', icon: Trophy },
+      { to: '/shop',           label: 'Shop',           icon: ShoppingBag },
+      { to: '/cafe',           label: 'Cafe/Bar',       icon: Coffee },
     ],
   },
   {
-    label: 'Management',
     items: [
-      { to: '/staff', icon: UserCog, label: 'Staff & HR' },
-      { to: '/finance', icon: DollarSign, label: 'Finance' },
-      { to: '/enquiries', icon: MessageSquare, label: 'Enquiries' },
-      { to: '/clients', icon: Building2, label: 'Business Clients' },
+      { to: '/staff',   label: 'Staff & HR', icon: BadgeCheck },
+      { to: '/finance', label: 'Finance',    icon: CreditCard },
     ],
   },
   {
-    label: 'Analytics',
     items: [
-      { to: '/reports', icon: BarChart3, label: 'Reports' },
-      { to: '/settings', icon: SettingsIcon, label: 'Settings' },
+      { to: '/enquiries', label: 'Enquiries', icon: HelpCircle },
+      { to: '/clients',   label: 'Clients',   icon: Building2 },
+      { to: '/reports',   label: 'Reports',   icon: BarChart2 },
+    ],
+  },
+  {
+    items: [
+      { to: '/settings', label: 'Settings', icon: Settings },
     ],
   },
 ]
 
-export default function Sidebar({ collapsed, onToggle }) {
-  const location = useLocation()
+export default function Sidebar() {
+  const { pathname } = useLocation()
 
   return (
     <aside
-      className="flex flex-col border-r border-[var(--color-border)] bg-white transition-all duration-200 ease-in-out"
-      style={{ width: collapsed ? 'var(--sidebar-collapsed)' : 'var(--sidebar-width)' }}
+      className="flex flex-col bg-white border-r border-gray-200 flex-shrink-0 h-screen"
+      style={{ width: 'var(--sidebar-width, 200px)' }}
     >
-      {/* Logo */}
-      <div className="flex items-center h-14 px-4 border-b border-[var(--color-border)]">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <div className="w-8 h-8 rounded bg-[var(--color-primary)] flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
-          {!collapsed && (
-            <span className="text-[15px] font-semibold text-[var(--color-text)] whitespace-nowrap">
-              Skyline Sports
-            </span>
-          )}
+      {/* ── Logo ── */}
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: 'var(--color-primary)' }}
+        >
+          <Trophy size={15} color="#fff" strokeWidth={2.2} />
+        </div>
+        <div className="leading-tight min-w-0">
+          <div className="text-[13px] font-bold text-gray-900 leading-none truncate">Skyline Sports Club</div>
+          <div className="text-[10px] text-gray-400 mt-0.5">Enterprise Operations</div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            {!collapsed && (
-              <div className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                {group.label}
-              </div>
-            )}
-            {group.items.map((item) => {
-              const isActive = location.pathname === item.to
-              const Icon = item.icon
+      {/* ── Nav ── */}
+      <nav className="flex-1 overflow-y-auto py-3">
+        {nav.map((group, gi) => (
+          <div key={gi} className={gi > 0 ? 'mt-1 pt-1 border-t border-gray-100' : ''}>
+            {group.items.map(({ to, label, icon: Icon }) => {
+              const active = pathname === to || (to !== '/dashboard' && pathname.startsWith(to))
               return (
                 <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={`flex items-center gap-3 px-3 py-2 rounded text-[13px] font-medium transition-colors mb-0.5 ${
-                    isActive
-                      ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] border-l-[3px] border-[var(--color-primary)]'
-                      : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)]'
-                  }`}
+                  key={to}
+                  to={to}
+                  title={label}
+                  className={[
+                    'flex items-center gap-2.5 mx-2 px-3 py-2.5 rounded-lg text-[13px] font-medium',
+                    'transition-all duration-150 leading-none',
+                    active
+                      ? 'bg-[var(--color-primary-light)] text-[var(--color-primary)] font-semibold'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                  ].join(' ')}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
-                  {!collapsed && <span>{item.label}</span>}
+                  <Icon
+                    size={16}
+                    strokeWidth={active ? 2.2 : 1.75}
+                    className={active ? 'text-[var(--color-primary)] flex-shrink-0' : 'text-gray-400 flex-shrink-0'}
+                  />
+                  <span className="truncate">{label}</span>
                 </NavLink>
               )
             })}
@@ -92,14 +93,22 @@ export default function Sidebar({ collapsed, onToggle }) {
         ))}
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="border-t border-[var(--color-border)] p-2">
-        <button
-          onClick={onToggle}
-          className="w-full flex items-center justify-center py-2 rounded text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] transition-colors"
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+      {/* ── User profile ── */}
+      <div className="border-t border-gray-100 px-3 py-3">
+        <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
+                       text-white text-[11px] font-bold select-none"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            MV
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] font-semibold text-gray-900 truncate leading-tight">Marcus Vance</div>
+            <div className="text-[10px] text-gray-400 truncate mt-0.5">Ops Director</div>
+          </div>
+          <ChevronRight size={13} className="text-gray-400 flex-shrink-0" />
+        </div>
       </div>
     </aside>
   )
