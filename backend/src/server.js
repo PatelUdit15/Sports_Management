@@ -22,6 +22,7 @@ import enquiryRoutes from "./routes/enquiryRoutes.js";
 import courtRoutes from "./routes/courtRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import financeRoutes from "./routes/financeRoutes.js";
 
 const app = express();
 
@@ -106,6 +107,7 @@ app.use("/api/enquiries", enquiryRoutes);
 app.use("/api/courts", courtRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/audit-trail", auditRoutes);
+app.use("/api/finance", financeRoutes);
 
 // 404 handler
 app.use((req, res) => {
