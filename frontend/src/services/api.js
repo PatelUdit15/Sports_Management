@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -63,7 +63,7 @@ api.interceptors.response.use(
       console.warn('Network error targeting:', targetUrl, error);
       return Promise.reject({
         success: false,
-        message: `Network error. Could not connect to API server at ${targetUrl || 'http://localhost:5001/api'}. Please ensure the backend is running.`,
+        message: `Network error. Could not connect to API server at ${targetUrl || 'http://localhost:5000/api'}. Please ensure the backend is running.`,
         error: 'NETWORK_ERROR',
       });
     } else {
@@ -113,5 +113,27 @@ api.createEmployee = async (employeeData) => {
   return res.data;
 };
 
+// Enquiry CRM endpoints
+api.getEnquiries = async (params) => {
+  const res = await api.get('/enquiries', { params });
+  return res.data;
+};
+
+api.createEnquiry = async (enquiryData) => {
+  const res = await api.post('/enquiries', enquiryData);
+  return res.data;
+};
+
+api.updateEnquiryStatus = async (id, status, notes) => {
+  const res = await api.patch(`/enquiries/${id}/status`, { status, notes });
+  return res.data;
+};
+
+api.deleteEnquiry = async (id) => {
+  const res = await api.delete(`/enquiries/${id}`);
+  return res.data;
+};
+
 export { api };
 export default api;
+

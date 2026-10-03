@@ -8,8 +8,6 @@ export default function DashboardLayout() {
       <Sidebar />
 
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Topbar />
-
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           {/* Consistent page gutter: 28px horizontal, 28px vertical on large screens */}
           <div className="max-w-[1440px] mx-auto w-full px-6 py-6 lg:px-8 lg:py-7">

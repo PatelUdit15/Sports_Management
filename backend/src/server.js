@@ -18,6 +18,7 @@ import userRoutes from "./routes/userRoutes.js";
 import clubRoutes from "./routes/clubRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
+import enquiryRoutes from "./routes/enquiryRoutes.js";
 
 const app = express();
 
@@ -98,6 +99,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/club", clubRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/enquiries", enquiryRoutes);
 
 // 404 handler
 app.use((req, res) => {

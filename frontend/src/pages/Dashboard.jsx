@@ -1,83 +1,75 @@
-import React, { useEffect, useState } from 'react';
+/**
+ * Dashboard.jsx
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Executive Overview — KPIs, operational alerts, status, and quick module links.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
-  Users,
-  Trophy,
-  DollarSign,
-  TrendingUp,
-  AlertTriangle,
-  Clock,
-  Calendar,
-  Coffee,
-  ShoppingBag,
-  ArrowUpRight,
-  Plus,
-  CheckCircle2,
-  RefreshCw,
-  Activity,
-  Layers,
+  Users, Trophy, DollarSign, TrendingUp,
+  AlertTriangle, Clock, Coffee, ShoppingBag,
+  Plus, RefreshCw, Activity,
 } from 'lucide-react';
+import { getGreeting, todayLabel } from '../components/dashboard/dashboardUtils';
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Dashboard
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function Dashboard({ setActiveTab }) {
-  const navigate = useNavigate();
-  const { user, club, enabledModules, hasModule } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const navigate        = useNavigate();
+  const { user, club, hasModule } = useAuth();
+
+  // ── API state ───────────────────────────────────────────────────────────────
+  const [data,       setData]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const [error,      setError]      = useState(null);
 
-  // Navigate handler supporting both tab callback and router path
-  const handleNavigate = (path) => {
-    if (typeof setActiveTab === 'function') {
-      setActiveTab(path);
-    } else {
-      navigate(`/${path}`);
-    }
-  };
 
-  // Helper to check module status with multiple alias forms
-  const isModuleEnabled = (mod) => {
+  // ── Navigation helper ───────────────────────────────────────────────────────
+  const handleNavigate = useCallback((path) => {
+    if (typeof setActiveTab === 'function') setActiveTab(path);
+    else navigate(`/${path}`);
+  }, [navigate, setActiveTab]);
+
+  // ── Module guard with alias mapping ────────────────────────────────────────
+  const isModuleEnabled = useCallback((mod) => {
     if (!mod) return true;
     const m = mod.toUpperCase();
-    if (m === 'COURTS' || m === 'COURT' || m === 'COURT_BOOKING') {
+    if (m === 'COURTS' || m === 'COURT' || m === 'COURT_BOOKING')
       return hasModule ? hasModule('COURT_BOOKING') : true;
-    }
-    if (m === 'MEMBERSHIP' || m === 'MEMBERS') {
+    if (m === 'MEMBERSHIP' || m === 'MEMBERS')
       return hasModule ? hasModule('MEMBERSHIP') : true;
-    }
-    if (m === 'SHOP') {
+    if (m === 'SHOP')
       return hasModule ? hasModule('SHOP') : true;
-    }
-    if (m === 'CAFE' || m === 'BAR') {
+    if (m === 'CAFE' || m === 'BAR')
       return hasModule ? hasModule('BAR') : true;
-    }
-    if (m === 'FINANCE' || m === 'ACCOUNTING') {
+    if (m === 'FINANCE' || m === 'ACCOUNTING')
       return hasModule ? hasModule('ACCOUNTING') : true;
-    }
-    if (m === 'STAFF' || m === 'HR') {
+    if (m === 'STAFF' || m === 'HR')
       return hasModule ? hasModule('HR') : true;
-    }
     return hasModule ? hasModule(m) : true;
-  };
+  }, [hasModule]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
+  // ── Data fetching ───────────────────────────────────────────────────────────
+  useEffect(() => { loadDashboard(); }, []);
 
   const loadDashboard = async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await api.getDashboard();
-      if (res && res.success) {
+      if (res?.success) {
         setData(res.data?.dashboard || res.data || res.dashboard);
       } else {
         setError(res?.message || 'Failed to fetch dashboard data');
       }
     } catch (e) {
-      console.error('Failed to load dashboard:', e);
       setError(e?.message || 'Network error while connecting to backend');
     } finally {
       setLoading(false);
@@ -90,367 +82,352 @@ export default function Dashboard({ setActiveTab }) {
     await loadDashboard();
   };
 
+  // ── Loading screen ──────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-[#714B67] border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-medium text-[#6B7280]">
-            Connecting to Champions Club ERP Engine...
+          <div
+            className="w-9 h-9 rounded-full border-[3px] animate-spin mx-auto"
+            style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }}
+          />
+          <p className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>
+            Loading dashboard…
           </p>
         </div>
       </div>
     );
   }
 
-  const kpis = data?.kpis || {};
-  const todayBookings = data?.todayBookings || [];
-  const courtUtilization = data?.courtUtilization || [];
+  // ── Safe data extraction ────────────────────────────────────────────────────
+  const kpis   = data?.kpis   || {};
   const alerts = data?.alerts || [];
-  const recentActivity = data?.recentActivity || [];
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  Render
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 animate-fade-in">
-      {/* Top Banner / Welcome */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-[#E5E7EB] shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-bold text-[#1F2937] tracking-tight">
-              Enterprise Operations Dashboard
-            </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live Sync Active
-            </span>
+    <>
+      <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-5 animate-fade-in">
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            HEADER BAR
+        ══════════════════════════════════════════════════════════════════════ */}
+        <div className="card px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Left — club name + greeting */}
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1
+                className="text-[18px] font-bold leading-tight"
+                style={{ color: 'var(--color-text)' }}
+              >
+                {club?.name || data?.club?.name || 'Sports Club'}
+              </h1>
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                style={{ background: '#eef6ee', color: '#2d6a2d', border: '1px solid #c3dfc3' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Live
+              </span>
+            </div>
+            <p className="text-[13px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+              {getGreeting()},{' '}
+              <span className="font-semibold" style={{ color: 'var(--color-text-secondary)' }}>
+                {user?.name || 'Staff'}
+              </span>
+              {' '}· {todayLabel()}
+            </p>
           </div>
-          <p className="text-xs text-[#6B7280] mt-1">
-            Real-time status for <strong className="text-[#1F2937] font-semibold">{club?.name || data?.club?.name || 'Sports Club'}</strong> • Modular SaaS Engine Online
-          </p>
+
+          {/* Right — action buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="btn btn-secondary text-[12px] px-3 py-1.5"
+              title="Refresh dashboard data"
+              aria-label="Refresh dashboard data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              Sync
+            </button>
+
+            {isModuleEnabled('courts') && (
+              <button
+                onClick={() => handleNavigate('court-bookings')}
+                className="btn btn-primary text-[12px] px-3 py-1.5"
+                title="Open court bookings"
+                aria-label="Create a new court booking"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Book Court
+              </button>
+            )}
+
+            {isModuleEnabled('membership') && (
+              <button
+                onClick={() => handleNavigate('members')}
+                className="btn btn-secondary text-[12px] px-3 py-1.5"
+                title="Go to members"
+                aria-label="Add a new member"
+              >
+                <Users className="w-3.5 h-3.5" style={{ color: 'var(--color-primary)' }} />
+                New Member
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Quick Action Shortcuts & Refresh */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 transition-colors shadow-xs"
-            title="Refresh dashboard metrics"
+        {/* ══════════════════════════════════════════════════════════════════════
+            ERROR BANNER
+        ══════════════════════════════════════════════════════════════════════ */}
+        {error && (
+          <div
+            className="card px-4 py-3 flex items-center justify-between text-[13px]"
+            style={{ background: '#fff5f5', borderColor: '#fca5a5' }}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>Sync</span>
-          </button>
-
-          {isModuleEnabled('courts') && (
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: 'var(--color-danger)' }} />
+              <span style={{ color: '#7f1d1d' }}>{error}</span>
+            </div>
             <button
-              onClick={() => handleNavigate('court-bookings')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#57344f] text-white hover:bg-[#714b67] transition-colors shadow-xs"
+              onClick={loadDashboard}
+              className="text-[12px] font-semibold underline hover:no-underline ml-4"
+              style={{ color: 'var(--color-danger)' }}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Book Court</span>
+              Retry
             </button>
-          )}
+          </div>
+        )}
 
+        {/* ══════════════════════════════════════════════════════════════════════
+            OPERATIONAL ALERTS
+        ══════════════════════════════════════════════════════════════════════ */}
+        {alerts.length > 0 && (
+          <div
+            className="card px-4 py-3 flex items-start gap-3"
+            style={{ background: '#fffbeb', borderColor: '#fde68a' }}
+          >
+            <AlertTriangle
+              className="w-4 h-4 shrink-0 mt-0.5"
+              style={{ color: 'var(--color-warning)' }}
+            />
+            <div className="flex-1 text-[12px]" style={{ color: '#78350f' }}>
+              <span className="font-bold mr-1.5">Alerts:</span>
+              {alerts.map((a) => a.message).join(' · ')}
+            </div>
+            {isModuleEnabled('shop') && (
+              <button
+                onClick={() => handleNavigate('shop')}
+                className="text-[11px] font-semibold underline hover:no-underline shrink-0"
+                style={{ color: '#92400e' }}
+                aria-label="Go to shop to review stock levels"
+              >
+                Review
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════════════════
+            KPI STRIP  (4 metric cards)
+        ══════════════════════════════════════════════════════════════════════ */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          {/* Active Members */}
           {isModuleEnabled('membership') && (
             <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
               onClick={() => handleNavigate('members')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1F2937] border border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors"
+              aria-label={`${kpis.activeMembers ?? 0} active members — go to members`}
             >
-              <Users className="w-3.5 h-3.5 text-[#00696e]" />
-              <span>New Member</span>
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Active Members
+                </span>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--color-primary-light)' }}
+                >
+                  <Users className="w-4 h-4" style={{ color: 'var(--color-primary)' }} />
+                </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-text)' }}>
+                {kpis.activeMembers ?? 0}
+              </div>
+              <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <TrendingUp className="w-3 h-3" />
+                <span>{kpis.expiringSoon ?? 0} expiring in 30d</span>
+              </div>
             </button>
           )}
 
-          {isModuleEnabled('shop') && (
+          {/* Today's Bookings */}
+          {isModuleEnabled('courts') && (
             <button
-              onClick={() => handleNavigate('shop')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-[#1F2937] border border-[#E5E7EB] hover:bg-[#F8F9FA] transition-colors"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-[#714B67]" />
-              <span>POS Sale</span>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Error notification if any */}
-      {error && (
-        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-center justify-between text-xs text-rose-800">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{error}</span>
-          </div>
-          <button
-            onClick={loadDashboard}
-            className="font-semibold underline hover:no-underline ml-4"
-          >
-            Retry Connection
-          </button>
-        </div>
-      )}
-
-      {/* Operational Alerts banner */}
-      {alerts.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-3">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <div className="flex-1 text-xs">
-            <span className="font-bold text-amber-900 mr-2">Operational Alerts:</span>
-            <span className="text-amber-800">
-              {alerts.map((a) => a.message).join(' • ')}
-            </span>
-          </div>
-          {isModuleEnabled('shop') && (
-            <button
-              onClick={() => handleNavigate('shop')}
-              className="text-xs font-semibold text-amber-900 underline hover:no-underline shrink-0"
-            >
-              Review Stock
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Dynamic KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Active Members */}
-        {isModuleEnabled('membership') && (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">Active Members</span>
-              <div className="w-7 h-7 rounded-lg bg-[#57344f]/10 text-[#57344f] flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#1F2937]">{kpis.activeMembers ?? 0}</div>
-            <div className="flex items-center gap-1 mt-1 text-[11px] text-[#00A09D]">
-              <TrendingUp className="w-3 h-3" />
-              <span>{kpis.expiringSoon ?? 0} expiring in next 30 days</span>
-            </div>
-          </div>
-        )}
-
-        {/* Court Bookings Today */}
-        {isModuleEnabled('courts') && (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">Today's Bookings</span>
-              <div className="w-7 h-7 rounded-lg bg-teal-50 text-[#00696e] flex items-center justify-center">
-                <Trophy className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#1F2937]">{kpis.todayBookingsCount ?? 0}</div>
-            <div className="flex items-center gap-1 mt-1 text-[11px] text-[#6B7280]">
-              <Clock className="w-3 h-3 text-[#00696e]" />
-              <span>Court Occupancy: <strong className="text-[#1F2937]">{kpis.courtUtilization ?? 0}%</strong></span>
-            </div>
-          </div>
-        )}
-
-        {/* Monthly Revenue */}
-        {isModuleEnabled('finance') && (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">Monthly Revenue</span>
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <DollarSign className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#1F2937]">
-              ₹{Number(kpis.monthlyRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </div>
-            <div className="text-[11px] text-[#6B7280] mt-1">Current billing cycle</div>
-          </div>
-        )}
-
-        {/* Cafe / Shop / CRM Status */}
-        {isModuleEnabled('cafe') ? (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">Cafe Open Tabs</span>
-              <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
-                <Coffee className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#1F2937]">{kpis.activeTabs ?? 0}</div>
-            <div className="text-[11px] text-amber-700 mt-1 font-medium">
-              {kpis.pendingKitchenOrders ?? 0} orders in prep
-            </div>
-          </div>
-        ) : isModuleEnabled('shop') ? (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">Low Stock Alerts</span>
-              <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-700 flex items-center justify-center">
-                <ShoppingBag className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#DC2626]">{kpis.lowStockCount ?? 0}</div>
-            <div className="text-[11px] text-[#6B7280] mt-1">Items below safety reorder level</div>
-          </div>
-        ) : (
-          <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs">
-            <div className="flex items-center justify-between text-xs text-[#6B7280] mb-2">
-              <span className="font-medium">New CRM Enquiries</span>
-              <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-[#1F2937]">{kpis.newLeadsCount ?? 0}</div>
-            <div className="text-[11px] text-[#6B7280] mt-1">Pending follow-up</div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Grid: Court Bookings & Utilization */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Columns: Today's Bookings Schedule */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-[#E5E7EB] shadow-xs p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-[#1F2937]">Today's Court Sessions</h2>
-              <p className="text-[11px] text-[#6B7280]">
-                Live reservations and booked time slots
-              </p>
-            </div>
-            <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
               onClick={() => handleNavigate('court-bookings')}
-              className="text-xs text-[#714B67] hover:underline font-semibold flex items-center gap-1"
+              aria-label={`${kpis.todayBookingsCount ?? 0} bookings today — go to court bookings`}
             >
-              <span>Full Calendar</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Today's Bookings
+                </span>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: '#e8f6f5' }}
+                >
+                  <Trophy className="w-4 h-4" style={{ color: '#0f766e' }} />
+                </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-text)' }}>
+                {kpis.todayBookingsCount ?? 0}
+              </div>
+              <div className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                <Clock className="w-3 h-3" />
+                <span>
+                  Occupancy:{' '}
+                  <strong style={{ color: 'var(--color-text-secondary)' }}>
+                    {kpis.courtUtilization ?? 0}%
+                  </strong>
+                </span>
+              </div>
             </button>
-          </div>
+          )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#F8F9FA] text-[#6B7280] uppercase tracking-wider font-semibold border-y border-[#E5E7EB]">
-                <tr>
-                  <th className="py-2.5 px-3">Time</th>
-                  <th className="py-2.5 px-3">Court</th>
-                  <th className="py-2.5 px-3">Player / Member</th>
-                  <th className="py-2.5 px-3">Type</th>
-                  <th className="py-2.5 px-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F3F4F6]">
-                {todayBookings.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="py-8 text-center text-[#9CA3AF]">
-                      No court bookings scheduled for today.
-                    </td>
-                  </tr>
-                ) : (
-                  todayBookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-[#F8F9FA] transition-colors">
-                      <td className="py-3 px-3 font-semibold text-[#1F2937] whitespace-nowrap">
-                        {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
-                        {new Date(b.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="py-3 px-3 font-medium text-[#4B5563] whitespace-nowrap">
-                        {b.court?.name || 'Main Court'}
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="font-semibold text-[#1F2937]">{b.guestName || 'Member'}</div>
-                        {b.member?.phone && (
-                          <div className="text-[10px] text-[#9CA3AF] font-mono">{b.member.phone}</div>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-700 rounded">
-                          {b.bookingType}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                            b.status === 'Confirmed'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : b.status === 'In Progress'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>{b.status}</span>
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Right Column: Court Utilization Breakdown & Audit Trail */}
-        <div className="space-y-6">
-          {/* Utilization Breakdown */}
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xs p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#1F2937]">Facility Occupancy</h2>
-              <span className="text-[10px] font-semibold bg-teal-50 text-teal-800 px-2 py-0.5 rounded">
-                Today
-              </span>
-            </div>
-            <div className="space-y-3">
-              {courtUtilization.map((c) => (
-                <div key={c.id} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-medium text-[#374151] truncate max-w-[170px]">{c.name}</span>
-                    <span className="font-bold text-[#714B67]">{c.utilization}%</span>
-                  </div>
-                  <div className="w-full bg-[#E5E7EB] h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-[#57344f] to-[#00696e] h-full rounded-full transition-all duration-500"
-                      style={{ width: `${Math.min(100, Math.max(8, c.utilization))}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-[10px] text-[#9CA3AF] flex justify-between">
-                    <span>{c.sportType} • {c.surface}</span>
-                    <span>{c.bookedHours} hrs booked</span>
-                  </div>
+          {/* Monthly Revenue */}
+          {isModuleEnabled('finance') && (
+            <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
+              onClick={() => handleNavigate('finance')}
+              aria-label="View monthly revenue in finance"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Monthly Revenue
+                </span>
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: '#ecfdf5' }}
+                >
+                  <DollarSign className="w-4 h-4" style={{ color: 'var(--color-success)' }} />
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-text)' }}>
+                ₹{Number(kpis.monthlyRevenue || 0).toLocaleString('en-IN')}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                Current billing cycle
+              </div>
+            </button>
+          )}
 
-          {/* Audit Log / Live Activity Feed */}
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xs p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#1F2937]">Recent Audit Trail</h2>
-              <span className="text-[10px] font-semibold bg-[#F5EFF3] text-[#714B67] px-2 py-0.5 rounded">
-                Secured
-              </span>
-            </div>
-            <div className="space-y-2.5">
-              {recentActivity.map((log) => (
-                <div key={log.id} className="text-xs border-b border-[#F3F4F6] pb-2 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#1F2937]">{log.action}</span>
-                    <span className="text-[10px] text-[#9CA3AF]">
-                      {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#6B7280]">
-                    {log.entity} • by {log.user?.firstName || log.user?.name || 'Staff'}
-                  </div>
+          {/* Dynamic 4th card — Café / Shop / CRM */}
+          {isModuleEnabled('cafe') ? (
+            <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
+              onClick={() => handleNavigate('cafe')}
+              aria-label="Go to café"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Café Open Tabs
+                </span>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#fefce8' }}>
+                  <Coffee className="w-4 h-4" style={{ color: '#a16207' }} />
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-text)' }}>
+                {kpis.activeTabs ?? 0}
+              </div>
+              <div className="text-[11px]" style={{ color: '#a16207' }}>
+                {kpis.pendingKitchenOrders ?? 0} orders in prep
+              </div>
+            </button>
+          ) : isModuleEnabled('shop') ? (
+            <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
+              onClick={() => handleNavigate('shop')}
+              aria-label="Go to shop — low stock alerts"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  Low Stock Alerts
+                </span>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#fff1f2' }}>
+                  <ShoppingBag className="w-4 h-4" style={{ color: 'var(--color-danger)' }} />
+                </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-danger)' }}>
+                {kpis.lowStockCount ?? 0}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                Below reorder level
+              </div>
+            </button>
+          ) : (
+            <button
+              className="card p-5 space-y-3 text-left hover:shadow-md transition-shadow"
+              onClick={() => handleNavigate('enquiries')}
+              aria-label="Go to CRM enquiries"
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  CRM Enquiries
+                </span>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#eff6ff' }}>
+                  <Activity className="w-4 h-4" style={{ color: '#2563eb' }} />
+                </div>
+              </div>
+              <div className="text-[28px] font-bold leading-none" style={{ color: 'var(--color-text)' }}>
+                {kpis.newLeadsCount ?? 0}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                Pending follow-up
+              </div>
+            </button>
+          )}
         </div>
-      </div>
 
-      {/* System status bar */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-[11px] text-gray-400">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Core ERP Server: Online (Port 5001)</span>
+        {/* ══════════════════════════════════════════════════════════════════════
+            SYSTEM STATUS FOOTER
+        ══════════════════════════════════════════════════════════════════════ */}
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 pb-2 text-[11px]"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            ERP Server: Online
+          </span>
+          <span style={{ color: 'var(--color-border)' }}>|</span>
+          <span>Club: {club?.name || 'Active'}</span>
+          <span style={{ color: 'var(--color-border)' }}>|</span>
+          <span>User: {user?.name} · {user?.role?.replace(/_/g, ' ')}</span>
+          <span style={{ color: 'var(--color-border)' }}>|</span>
+          <span>Last sync: just now</span>
         </div>
-        <span className="text-gray-200">|</span>
-        <span>Connected Club: {club?.name || 'Active'}</span>
-        <span className="text-gray-200">|</span>
-        <span>Active User: {user?.name} ({user?.role})</span>
+
       </div>
-    </div>
+    </>
   );
 }

@@ -64,6 +64,7 @@ export default function Sidebar() {
       if (item.to === '/cafe') return hasModule('BAR')
       if (item.to === '/staff') return hasModule('HR')
       if (item.to === '/finance') return hasModule('ACCOUNTING')
+      if (item.to === '/enquiries') return user?.role === 'SUPER_ADMIN' || user?.role === 'RECEPTIONIST'
       
       // Default: show item
       return true
