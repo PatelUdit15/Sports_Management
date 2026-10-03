@@ -18,28 +18,18 @@ import {
 import { LedgerModal } from '../components/dashboard/DashboardModals';
 
 // ── Row builder ───────────────────────────────
-function buildRows(todayBookings, isModuleEnabled) {
-  const rows = todayBookings.map((b, i) => ({
-    txn:      `#TXN-${9501 + i}`,
-    category: 'Court Booking',
-    desc:     `Court Booking – ${b.court?.name || 'Court'}`,
-    player:   b.guestName || 'Member',
-    amount:   deriveFee(b.court?.name || ''),
-    status:   b.status,
-  }));
-  if (isModuleEnabled('membership')) {
-    rows.push({ txn: '#TXN-9599', category: 'Membership', desc: 'Membership Renewal – Gold',
-      player: 'Walk-in Member', amount: 25000, status: 'Confirmed' });
-  }
-  if (isModuleEnabled('shop')) {
-    rows.push({ txn: '#TXN-9600', category: 'Pro Shop', desc: 'Pro Shop – Equipment Purchase',
-      player: 'Counter Sale', amount: 3500, status: 'Confirmed' });
-  }
-  if (isModuleEnabled('cafe')) {
-    rows.push({ txn: '#TXN-9601', category: 'Café & Bar', desc: 'Café & Bar – Tab Settlement',
-      player: 'Table 4', amount: 860, status: 'Pending' });
-  }
-  return rows;
+function buildRows(todayBookings = []) {
+  return todayBookings
+    .filter((b) => b.status !== 'Cancelled')
+    .map((b) => ({
+      txn: `#TXN-${(b.id || '').replace('BK-', '').replace('#', '')}`,
+      bookingId: b.id,
+      category: 'Court Booking',
+      desc: `Court Booking – ${b.court?.name || 'Court'}`,
+      player: b.guestName || b.member?.name || 'Member',
+      amount: Number(b.fee) !== undefined && !isNaN(Number(b.fee)) ? Number(b.fee) : deriveFee(b.court?.name || ''),
+      status: b.status || 'Confirmed',
+    }));
 }
 
 export default function DailyLedgerPage() {
@@ -77,7 +67,7 @@ export default function DailyLedgerPage() {
   const handleRefresh = () => { setRefreshing(true); load(); };
 
   const allRows = useMemo(
-    () => buildRows(data?.todayBookings || [], isModuleEnabled),
+    () => buildRows(data?.todayBookings || []),
     [data]
   );
 

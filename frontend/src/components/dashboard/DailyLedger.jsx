@@ -12,41 +12,24 @@
 
 import React, { useMemo } from 'react';
 import { DollarSign, ArrowUpRight } from 'lucide-react';
-import { deriveFee, statusBadgeClass, todayLabel } from './dashboardUtils';
+import { deriveFee, statusBadgeClass, todayLabel, formatDateLabel } from './dashboardUtils';
 
 // ─────────────────────────────────────────────
 //  Ledger row builder
 // ─────────────────────────────────────────────
 
-function buildLedgerRows(todayBookings, isModuleEnabled) {
-  const rows = todayBookings.map((b, i) => ({
-    txn:    `#TXN-${9501 + i}`,
-    desc:   `Court Booking – ${b.court?.name || 'Court'}`,
-    player: b.guestName || 'Member',
-    amount: deriveFee(b.court?.name || ''),
-    status: b.status,
-  }));
-
-  if (isModuleEnabled('membership')) {
-    rows.push({
-      txn: '#TXN-9599', desc: 'Membership Renewal – Gold',
-      player: 'Walk-in Member', amount: 25000, status: 'Confirmed',
-    });
-  }
-  if (isModuleEnabled('shop')) {
-    rows.push({
-      txn: '#TXN-9600', desc: 'Pro Shop – Equipment Purchase',
-      player: 'Counter Sale', amount: 3500, status: 'Confirmed',
-    });
-  }
-  if (isModuleEnabled('cafe')) {
-    rows.push({
-      txn: '#TXN-9601', desc: 'Café & Bar – Tab Settlement',
-      player: 'Table 4', amount: 860, status: 'Pending',
-    });
-  }
-
-  return rows;
+function buildLedgerRows(todayBookings = []) {
+  return todayBookings
+    .filter((b) => b.status !== 'Cancelled')
+    .map((b) => ({
+      txn: `#TXN-${(b.id || '').replace('BK-', '').replace('#', '')}`,
+      bookingId: b.id,
+      category: 'Court Booking',
+      desc: `Court Booking – ${b.court?.name || 'Court'}`,
+      player: b.guestName || b.member?.name || 'Member',
+      amount: Number(b.fee) !== undefined && !isNaN(Number(b.fee)) ? Number(b.fee) : deriveFee(b.court?.name || ''),
+      status: b.status || 'Confirmed',
+    }));
 }
 
 // ─────────────────────────────────────────────
@@ -55,6 +38,7 @@ function buildLedgerRows(todayBookings, isModuleEnabled) {
 
 export default function DailyLedger({
   todayBookings = [],
+  selectedDate,
   isModuleEnabled,
   onRowClick,
   onNavigate,
@@ -84,7 +68,7 @@ export default function DailyLedger({
               Daily Ledger
             </h2>
             <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-              {todayLabel()} · Click any row for details
+              {selectedDate ? formatDateLabel(selectedDate) : todayLabel()} · Click any row for details
             </p>
           </div>
         </div>

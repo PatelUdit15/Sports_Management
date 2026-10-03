@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { Shield, ChevronRight, BarChart2 } from 'lucide-react';
-import { getRelativeTime, auditBorderColor } from './dashboardUtils';
+import { getRelativeTime, auditBorderColor, formatDateLabel } from './dashboardUtils';
 
 // ─────────────────────────────────────────────
 //  Facility Occupancy — lives here because it
@@ -20,7 +20,7 @@ import { getRelativeTime, auditBorderColor } from './dashboardUtils';
 //  in the right-side column.
 // ─────────────────────────────────────────────
 
-function FacilityOccupancy({ courtUtil }) {
+function FacilityOccupancy({ courtUtil, selectedDate }) {
   return (
     <div className="card overflow-hidden">
       <div
@@ -33,7 +33,9 @@ function FacilityOccupancy({ courtUtil }) {
             Facility Occupancy
           </h2>
         </div>
-        <span className="badge badge-gray" style={{ fontSize: '10px' }}>Today</span>
+        <span className="badge badge-gray" style={{ fontSize: '10px' }}>
+          {selectedDate ? formatDateLabel(selectedDate).split(',')[0] : 'Today'}
+        </span>
       </div>
 
       <div className="px-5 py-4 space-y-4">
@@ -167,14 +169,14 @@ function AuditTrailCard({ recentActivity, onEntryClick, onNavigate }) {
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   {log.entity}
-                  {log.user?.firstName && (
+                  {(log.user?.name || log.user?.firstName) && (
                     <span>
                       {' '}· by{' '}
                       <span
                         className="font-medium"
                         style={{ color: 'var(--color-text-secondary)' }}
                       >
-                        {log.user.firstName}
+                        {log.user?.name || log.user?.firstName}
                       </span>
                     </span>
                   )}
@@ -208,10 +210,16 @@ function AuditTrailCard({ recentActivity, onEntryClick, onNavigate }) {
 //  (Facility Occupancy stacked above Audit Trail)
 // ─────────────────────────────────────────────
 
-export default function AuditTrail({ recentActivity = [], courtUtil = [], onEntryClick, onNavigate }) {
+export default function AuditTrail({
+  recentActivity = [],
+  courtUtil = [],
+  selectedDate,
+  onEntryClick,
+  onNavigate,
+}) {
   return (
     <div className="space-y-5">
-      <FacilityOccupancy courtUtil={courtUtil} />
+      <FacilityOccupancy courtUtil={courtUtil} selectedDate={selectedDate} />
       <AuditTrailCard
         recentActivity={recentActivity}
         onEntryClick={onEntryClick}

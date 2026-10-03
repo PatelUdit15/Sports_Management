@@ -134,6 +134,69 @@ api.deleteEnquiry = async (id) => {
   return res.data;
 };
 
+// Court Management endpoints
+api.getCourts = async (params) => {
+  const res = await api.get('/courts', { params });
+  return res.data;
+};
+
+api.getCourt = async (id) => {
+  const res = await api.get(`/courts/${id}`);
+  return res.data;
+};
+
+api.createCourt = async (courtData) => {
+  const res = await api.post('/courts', courtData);
+  return res.data;
+};
+
+api.updateCourt = async (id, courtData) => {
+  const res = await api.put(`/courts/${id}`, courtData);
+  return res.data;
+};
+
+api.deleteCourt = async (id) => {
+  const res = await api.delete(`/courts/${id}`);
+  return res.data;
+};
+
+api.getCourtOccupancy = async () => {
+  const res = await api.get('/courts/occupancy/utilization');
+  return res.data;
+};
+
+// Booking & Reservation endpoints
+api.getBookings = async (params) => {
+  const res = await api.get('/bookings', { params });
+  return res.data;
+};
+
+api.createBooking = async (bookingData) => {
+  const res = await api.post('/bookings', bookingData);
+  return res.data;
+};
+
+api.updateBookingStatus = async (id, status) => {
+  const res = await api.patch(`/bookings/${id}/status`, { status });
+  return res.data;
+};
+
+api.deleteBooking = async (id) => {
+  const res = await api.delete(`/bookings/${id}`);
+  return res.data;
+};
+
+api.getDailyLedger = async (params) => {
+  const res = await api.get('/bookings/daily-ledger', { params });
+  return res.data;
+};
+
+// Audit Trail endpoints
+api.getAuditLogs = async (params) => {
+  const res = await api.get('/audit-trail', { params });
+  return res.data;
+};
+
 export { api };
 export default api;
 

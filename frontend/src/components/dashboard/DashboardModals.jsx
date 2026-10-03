@@ -122,7 +122,32 @@ export function DetailRow({ icon: Icon, label, value }) {
 //  Opened when a user clicks a booked cell in CourtMatrix
 // ─────────────────────────────────────────────
 
-export function BookingModal({ booking, onClose, onViewAll }) {
+export function BookingModal({ booking, onClose, onViewAll, onStatusChange, onDelete }) {
+  const [updating, setUpdating] = React.useState(false);
+
+  const handleStatus = async (newStatus) => {
+    if (!onStatusChange) return;
+    try {
+      setUpdating(true);
+      await onStatusChange(booking.id, newStatus);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    if (window.confirm(`Are you sure you want to cancel and remove booking #${booking.id}?`)) {
+      try {
+        setUpdating(true);
+        await onDelete(booking.id);
+        onClose();
+      } finally {
+        setUpdating(false);
+      }
+    }
+  };
+
   return (
     <Modal
       title="Booking Details"
@@ -136,35 +161,85 @@ export function BookingModal({ booking, onClose, onViewAll }) {
       <DetailRow
         icon={Clock}
         label="Time Slot"
-        value={`${fmtTime(booking.startTime)} – ${fmtTime(booking.endTime)}`}
+        value={
+          booking.slot ||
+          (booking.startTime && booking.endTime
+            ? `${fmtTime(booking.startTime)} – ${fmtTime(booking.endTime)}`
+            : 'Scheduled Slot')
+        }
       />
-      <DetailRow icon={Hash}     label="Date"           value={fmtDate(booking.startTime)} />
+      <DetailRow
+        icon={Hash}
+        label="Date"
+        value={booking.date || (booking.startTime ? fmtDate(booking.startTime) : todayLabel())}
+      />
       {booking.member?.phone && (
         <DetailRow icon={User}   label="Contact"        value={booking.member.phone} />
       )}
+      {booking.notes && (
+        <DetailRow icon={FileText} label="Notes"        value={booking.notes} />
+      )}
 
       {/* Status */}
-      <div className="flex items-center gap-3 pt-1">
-        <div
-          className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
-          style={{ background: 'var(--color-bg)' }}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-        </div>
-        <div>
+      <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center gap-3">
           <div
-            className="text-[10px] font-semibold uppercase tracking-wide mb-1"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--color-bg)' }}
           >
-            Status
+            <CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
           </div>
-          <span
-            className={statusBadgeClass(booking.status)}
-            aria-label={`Booking status: ${booking.status}`}
-          >
-            {booking.status}
-          </span>
+          <div>
+            <div
+              className="text-[10px] font-semibold uppercase tracking-wide mb-1"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              Status
+            </div>
+            <span
+              className={statusBadgeClass(booking.status)}
+              aria-label={`Booking status: ${booking.status}`}
+            >
+              {booking.status}
+            </span>
+          </div>
         </div>
+
+        {/* Status quick switcher */}
+        {onStatusChange && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {booking.status !== 'In Progress' && booking.status !== 'Completed' && booking.status !== 'Cancelled' && (
+              <button
+                disabled={updating}
+                onClick={() => handleStatus('In Progress')}
+                className="btn btn-secondary text-[11px] py-1 px-2.5"
+                title="Player arrived and checked in"
+              >
+                Check In
+              </button>
+            )}
+            {booking.status !== 'Completed' && booking.status !== 'Cancelled' && (
+              <button
+                disabled={updating}
+                onClick={() => handleStatus('Completed')}
+                className="btn btn-secondary text-[11px] py-1 px-2.5 text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+                title="Mark session completed"
+              >
+                Complete
+              </button>
+            )}
+            {booking.status !== 'Cancelled' && (
+              <button
+                disabled={updating}
+                onClick={() => handleStatus('Cancelled')}
+                className="btn btn-secondary text-[11px] py-1 px-2 text-red-600 hover:bg-red-50"
+                title="Cancel reservation"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Fee highlight */}
@@ -176,22 +251,34 @@ export function BookingModal({ booking, onClose, onViewAll }) {
           Session Fee
         </span>
         <span className="text-[16px] font-bold" style={{ color: 'var(--color-primary)' }}>
-          ₹{deriveFee(booking.court?.name || '').toLocaleString('en-IN')}
+          ₹{Number(booking.fee || deriveFee(booking.court?.name || '')).toLocaleString('en-IN')}
         </span>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-1">
+      <div className="flex gap-2 pt-2">
+        {onDelete && (
+          <button
+            disabled={updating}
+            className="btn btn-secondary text-red-600 hover:bg-red-50 text-[12px] px-3"
+            onClick={handleDelete}
+            title="Delete this booking permanently"
+          >
+            Delete
+          </button>
+        )}
         <button className="btn btn-secondary flex-1 justify-center text-[12px]" onClick={onClose}>
           Close
         </button>
-        <button
-          className="btn btn-primary flex-1 justify-center text-[12px]"
-          onClick={() => { onViewAll(); onClose(); }}
-        >
-          <Calendar className="w-3.5 h-3.5" />
-          All Bookings
-        </button>
+        {onViewAll && (
+          <button
+            className="btn btn-primary flex-1 justify-center text-[12px]"
+            onClick={() => { onViewAll(); onClose(); }}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            All Bookings
+          </button>
+        )}
       </div>
     </Modal>
   );

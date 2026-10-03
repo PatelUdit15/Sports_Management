@@ -29,9 +29,20 @@ export default function AuditTrailPage() {
   const load = async () => {
     try {
       setLoading(true); setError(null);
-      const res = await api.getDashboard();
-      if (res?.success) setData(res.data?.dashboard || res.data || res.dashboard);
-      else setError(res?.message || 'Failed to load data');
+      let logs = null;
+      try {
+        const auditRes = await api.getAuditLogs();
+        if (auditRes?.success) logs = auditRes.data?.logs || auditRes.logs;
+      } catch (err) {
+        // Fallback to dashboard
+      }
+
+      if (!logs) {
+        const res = await api.getDashboard();
+        if (res?.success) logs = res.data?.dashboard?.recentActivity || res.data?.recentActivity || res.recentActivity;
+      }
+
+      setData({ recentActivity: logs || [] });
     } catch (e) { setError(e?.message || 'Network error'); }
     finally { setLoading(false); setRefreshing(false); }
   };
@@ -188,15 +199,15 @@ export default function AuditTrailPage() {
                     <div className="flex items-center gap-3 mt-1 text-[12px]"
                       style={{ color: 'var(--color-text-muted)' }}>
                       <span>{log.entity}</span>
-                      {log.user?.firstName && (
+                      {(log.user?.name || log.user?.firstName) && (
                         <>
                           <span style={{ color: 'var(--color-border)' }}>·</span>
                           <span>
                             by{' '}
                             <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                              {log.user.firstName}
+                              {log.user?.name || log.user?.firstName}
                             </span>
-                            {log.user.role && (
+                            {log.user?.role && (
                               <span> ({log.user.role.replace(/_/g, ' ')})</span>
                             )}
                           </span>

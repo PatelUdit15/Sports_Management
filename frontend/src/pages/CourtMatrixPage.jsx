@@ -191,6 +191,22 @@ export default function CourtMatrixPage() {
               <div className="w-8 h-8 rounded-full border-[3px] animate-spin"
                 style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
             </div>
+          ) : courtColumns.length === 0 ? (
+            <div className="p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <BarChart2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-[15px] font-bold text-gray-900">No Courts Configured</h3>
+              <p className="text-[13px] text-gray-500 max-w-sm mx-auto">
+                No active courts found. Add your courts in Court Bookings to see the scheduling matrix.
+              </p>
+              <button
+                onClick={() => navigate('/court-bookings')}
+                className="btn btn-primary text-[12px] inline-flex items-center gap-1.5 mx-auto"
+              >
+                Go to Court Bookings
+              </button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse" style={{ minWidth: '700px' }}>

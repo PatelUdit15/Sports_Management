@@ -32,6 +32,58 @@ export function todayLabel() {
   });
 }
 
+export function formatDateLabel(dateStr) {
+  if (!dateStr) return todayLabel();
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const today = new Date();
+    const isToday =
+      today.getFullYear() === y &&
+      today.getMonth() === m - 1 &&
+      today.getDate() === d;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow =
+      tomorrow.getFullYear() === y &&
+      tomorrow.getMonth() === m - 1 &&
+      tomorrow.getDate() === d;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const isYesterday =
+      yesterday.getFullYear() === y &&
+      yesterday.getMonth() === m - 1 &&
+      yesterday.getDate() === d;
+
+    const formatted = dateObj.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    if (isToday) return `Today, ${formatted}`;
+    if (isTomorrow) return `Tomorrow, ${formatted}`;
+    if (isYesterday) return `Yesterday, ${formatted}`;
+    return formatted;
+  } catch {
+    return dateStr;
+  }
+}
+
+export function shiftDate(dateStr, offsetDays) {
+  if (!dateStr) return new Date().toISOString().split('T')[0];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  dateObj.setDate(dateObj.getDate() + offsetDays);
+  const yyyy = dateObj.getFullYear();
+  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const dd = String(dateObj.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export function fmtTime(iso) {
   return new Date(iso).toLocaleTimeString('en-IN', {
     hour: '2-digit',
@@ -66,13 +118,7 @@ export const TIME_BANDS = [
 ];
 
 /** Fallback court columns when API returns no utilization data */
-export const FALLBACK_COURTS = [
-  { id: 'CRT-1', name: 'Court 1 – Indoor Tennis',       utilization: 84 },
-  { id: 'CRT-2', name: 'Court 2 – Padel Beta',          utilization: 91 },
-  { id: 'CRT-3', name: 'Court 3 – Badminton Alpha',     utilization: 68 },
-  { id: 'CRT-4', name: 'Court 4 – Squash Championship', utilization: 56 },
-  { id: 'CRT-5', name: 'Court 5 – Clay Tennis',         utilization: 75 },
-];
+export const FALLBACK_COURTS = [];
 
 // ─────────────────────────────────────────────
 //  Ledger fee derivation
@@ -82,8 +128,11 @@ const FEE_MAP = {
   tennis: 1200, padel: 1500, squash: 800, badminton: 750, clay: 1000,
 };
 
-export function deriveFee(courtName = '') {
-  const n = courtName.toLowerCase();
+export function deriveFee(courtName = '', courtRate = null) {
+  if (courtRate !== null && courtRate !== undefined && Number(courtRate) > 0) {
+    return Number(courtRate);
+  }
+  const n = (courtName || '').toLowerCase();
   if (n.includes('padel'))     return FEE_MAP.padel;
   if (n.includes('squash'))    return FEE_MAP.squash;
   if (n.includes('badminton')) return FEE_MAP.badminton;
