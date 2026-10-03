@@ -129,7 +129,7 @@ export class StaffService {
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO employee_payslips (payslip_id, club_id, employee_id, employee_name, role, department, month, pay_period, basic_salary, allowances, deductions, net_salary, payment_status, payment_date, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PAID', '2026-10-01', NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PAID', '2026-10-01'::date, NOW())
        ON CONFLICT (payslip_id) DO NOTHING`,
       payslipId,
       clubId,
@@ -440,7 +440,7 @@ export class StaffService {
       for (const sl of sampleLeaves) {
         await prisma.$executeRawUnsafe(
           `INSERT INTO employee_leaves (leave_id, club_id, employee_id, employee_name, employee_email, department, leave_type, start_date, end_date, days_count, reason, status, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11, $12, NOW())
            ON CONFLICT (leave_id) DO NOTHING`,
           sl.id,
           clubId,
@@ -473,8 +473,8 @@ export class StaffService {
         department: l.department,
       },
       leaveType: l.leave_type,
-      startDate: l.start_date,
-      endDate: l.end_date,
+      startDate: l.start_date instanceof Date ? l.start_date.toISOString().split("T")[0] : (l.start_date ? String(l.start_date).split("T")[0] : ""),
+      endDate: l.end_date instanceof Date ? l.end_date.toISOString().split("T")[0] : (l.end_date ? String(l.end_date).split("T")[0] : ""),
       daysCount: l.days_count,
       reason: l.reason,
       status: l.status,
@@ -517,10 +517,12 @@ export class StaffService {
     const daysCount = Math.max(diffDays || 1, 1);
 
     const leaveId = `LV-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+    const cleanStartDate = isNaN(start.getTime()) ? startDate : start.toISOString().split("T")[0];
+    const cleanEndDate = isNaN(end.getTime()) ? endDate : end.toISOString().split("T")[0];
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO employee_leaves (leave_id, club_id, employee_id, employee_name, employee_email, department, leave_type, start_date, end_date, days_count, reason, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING', NOW())`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, $9::date, $10, $11, 'PENDING', NOW())`,
       leaveId,
       clubId,
       emp.employee_id,
@@ -528,8 +530,8 @@ export class StaffService {
       emp.email,
       emp.department,
       leaveType,
-      startDate,
-      endDate,
+      cleanStartDate,
+      cleanEndDate,
       daysCount,
       reason
     );
@@ -692,7 +694,7 @@ export class StaffService {
 
     await prisma.$executeRawUnsafe(
       `INSERT INTO employee_payslips (payslip_id, club_id, employee_id, employee_name, role, department, month, pay_period, basic_salary, allowances, deductions, net_salary, payment_status, payment_date, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PAID', TO_CHAR(NOW(), 'YYYY-MM-DD'), NOW())
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PAID', CURRENT_DATE, NOW())
        ON CONFLICT (payslip_id) DO UPDATE
        SET basic_salary = $9, allowances = $10, deductions = $11, net_salary = $12, payment_status = 'PAID'`,
       payslipId,
