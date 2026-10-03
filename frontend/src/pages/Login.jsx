@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, Trophy } from 'lucide-react'
 
 export default function Login() {
@@ -73,7 +73,13 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="text-center text-[11px] text-gray-400 mt-5">
+        <p className="text-center text-[12px] text-gray-500 mt-5">
+          Don't have an account?{' '}
+          <Link to="/signup" className="font-semibold text-[var(--color-primary)] hover:underline">
+            Create one free
+          </Link>
+        </p>
+        <p className="text-center text-[11px] text-gray-400 mt-3">
           Skyline Sports Club © 2026 · 256-bit SSL Encrypted
         </p>
       </div>
