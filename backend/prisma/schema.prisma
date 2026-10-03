@@ -1,0 +1,81 @@
+// Prisma Schema for Sports Management System
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Club Model
+model Club {
+  id        Int      @id @default(autoincrement())
+  clubId    String   @unique @db.VarChar(100)
+  name      String   @db.VarChar(100)
+  address   String   @db.Text
+  email     String   @db.VarChar(100)
+  phone     String   @db.VarChar(20)
+  website   String?  @db.VarChar(200)
+  sport     String?  @db.VarChar(50)
+  country   String?  @db.VarChar(50)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users              User[]
+  moduleConfiguration ModuleConfiguration?
+
+  @@map("clubs")
+}
+
+// User Model
+model User {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique @db.VarChar(100)
+  clubId    String   @db.VarChar(100)
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+
+  @@unique([email, clubId])
+  @@index([clubId])
+  @@index([email])
+  @@map("users")
+}
+
+// Module Configuration Model
+model ModuleConfiguration {
+  id         Int      @id @default(autoincrement())
+  clubId     String   @unique @db.VarChar(100)
+  membership Boolean  @default(true)
+  courtBooking Boolean @default(true) @map("court_booking")
+  shop       Boolean  @default(true)
+  bar        Boolean  @default(true)
+  hr         Boolean  @default(true)
+  accounting Boolean  @default(true)
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+
+  @@map("module_configurations")
+}
+
+// Role Enum
+enum Role {
+  SUPER_ADMIN
+  RECEPTIONIST
+  SHOP_INVENTORY_MANAGER
+  BAR_CAFETERIA_STAFF
+  HR_MANAGER
+  ACCOUNTANT
+}

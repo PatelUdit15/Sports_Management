@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, User, Trophy, CheckCircle } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function Signup() {
   const navigate = useNavigate()
+  const { signup } = useAuth()
   const [show, setShow] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -29,11 +32,22 @@ export default function Signup() {
     return e
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     const e2 = validate()
     if (Object.keys(e2).length) { setErrors(e2); return }
-    navigate('/onboarding')
+    
+    setLoading(true)
+    
+    try {
+      // Note: For initial signup, we don't have club info yet
+      // We'll navigate to onboarding where they provide club details
+      navigate('/onboarding', { state: { accountData: form } })
+    } catch (error) {
+      setErrors({ general: error.message || 'Signup failed. Please try again.' })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const set = (field, value) => {
@@ -126,6 +140,11 @@ export default function Signup() {
             </p>
 
             <form onSubmit={submit} noValidate className="space-y-4">
+              {errors.general && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-[12px] text-red-600">{errors.general}</p>
+                </div>
+              )}
 
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
@@ -245,8 +264,15 @@ export default function Signup() {
                 {errors.agree && <p className="text-[11px] text-red-500 mt-1 ml-6">{errors.agree}</p>}
               </div>
 
-              <button type="submit" className="btn btn-primary w-full justify-center py-2.5 text-[13px] mt-2">
-                Create Account &amp; Set Up Club
+              <button type="submit" className="btn btn-primary w-full justify-center py-2.5 text-[13px] mt-2" disabled={loading}>
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Creating Account...
+                  </>
+                ) : (
+                  'Create Account & Set Up Club'
+                )}
               </button>
             </form>
 

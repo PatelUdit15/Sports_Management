@@ -1,9 +1,10 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Trophy, ShoppingBag, Coffee,
   BadgeCheck, CreditCard, HelpCircle, Building2, BarChart2,
-  Settings, ChevronRight,
+  Settings, ChevronRight, LogOut,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const nav = [
   {
@@ -41,6 +42,33 @@ const nav = [
 
 export default function Sidebar() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const { user, club, logout, hasModule } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
+  // Filter navigation based on enabled modules
+  const filteredNav = nav.map(group => ({
+    ...group,
+    items: group.items.filter(item => {
+      // Always show dashboard and settings
+      if (item.to === '/dashboard' || item.to === '/settings') return true
+      
+      // Check module access for other items
+      if (item.to === '/members') return hasModule('MEMBERSHIP')
+      if (item.to === '/court-bookings') return hasModule('COURT_BOOKING')
+      if (item.to === '/shop') return hasModule('SHOP')
+      if (item.to === '/cafe') return hasModule('BAR')
+      if (item.to === '/staff') return hasModule('HR')
+      if (item.to === '/finance') return hasModule('ACCOUNTING')
+      
+      // Default: show item
+      return true
+    })
+  })).filter(group => group.items.length > 0) // Remove empty groups
 
   return (
     <aside
@@ -56,14 +84,16 @@ export default function Sidebar() {
           <Trophy size={15} color="#fff" strokeWidth={2.2} />
         </div>
         <div className="leading-tight min-w-0">
-          <div className="text-[13px] font-bold text-gray-900 leading-none truncate">Skyline Sports Club</div>
+          <div className="text-[13px] font-bold text-gray-900 leading-none truncate">
+            {club?.name || 'Sports Club'}
+          </div>
           <div className="text-[10px] text-gray-400 mt-0.5">Enterprise Operations</div>
         </div>
       </div>
 
       {/* ── Nav ── */}
       <nav className="flex-1 overflow-y-auto py-3">
-        {nav.map((group, gi) => (
+        {filteredNav.map((group, gi) => (
           <div key={gi} className={gi > 0 ? 'mt-1 pt-1 border-t border-gray-100' : ''}>
             {group.items.map(({ to, label, icon: Icon }) => {
               const active = pathname === to || (to !== '/dashboard' && pathname.startsWith(to))
@@ -94,21 +124,33 @@ export default function Sidebar() {
       </nav>
 
       {/* ── User profile ── */}
-      <div className="border-t border-gray-100 px-3 py-3">
+      <div className="border-t border-gray-100 p-3 space-y-2">
         <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0
                        text-white text-[11px] font-bold select-none"
             style={{ background: 'var(--color-primary)' }}
           >
-            MV
+            {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-semibold text-gray-900 truncate leading-tight">Marcus Vance</div>
-            <div className="text-[10px] text-gray-400 truncate mt-0.5">Ops Director</div>
+            <div className="text-[12px] font-semibold text-gray-900 truncate leading-tight">
+              {user?.name || 'User'}
+            </div>
+            <div className="text-[10px] text-gray-400 truncate mt-0.5">
+              {user?.role?.replace(/_/g, ' ') || 'Staff'}
+            </div>
           </div>
           <ChevronRight size={13} className="text-gray-400 flex-shrink-0" />
         </div>
+        
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2.5 w-full p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors text-[12px] font-medium"
+        >
+          <LogOut size={14} />
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   )

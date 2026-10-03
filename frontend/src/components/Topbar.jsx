@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom'
 import { Search, Bell, HelpCircle, Grid3x3, Plus } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 const tabs = [
   { label: 'Operations' },
@@ -24,6 +25,7 @@ const pageTitles = {
 
 export default function Topbar() {
   const { pathname } = useLocation()
+  const { user, club } = useAuth()
   const page = pageTitles[pathname] || 'Dashboard'
 
   return (
@@ -34,7 +36,7 @@ export default function Topbar() {
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-[12px] flex-shrink-0">
-          <span className="text-gray-400 font-medium">Skyline Sports</span>
+          <span className="text-gray-400 font-medium">{club?.name || 'Skyline Sports'}</span>
           <span className="text-gray-300">/</span>
           <span className="font-semibold text-gray-800">{page}</span>
         </div>
@@ -77,8 +79,9 @@ export default function Topbar() {
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px]
                        font-bold ml-1 flex-shrink-0 select-none"
             style={{ background: 'var(--color-primary)' }}
+            title={user?.name}
           >
-            MV
+            {user?.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'U'}
           </div>
         </div>
       </div>

@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Trophy, Building2, LayoutGrid, Sliders, Users, Send, CheckCircle,
   ChevronRight, ChevronLeft, MapPin, Phone, Globe, Upload,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { clubService } from '../services/clubService'
 
 /* ── Step definitions ─────────────────────────────────────── */
 const STEPS = [
@@ -77,13 +79,27 @@ const COUNTRY_DIAL_CODES = [
 /* ══════════════════════════════════════════════════════════ */
 export default function Onboarding() {
   const navigate = useNavigate()
-  const [step,   setStep]   = useState(1)
-  const [club,   setClub]   = useState({ name:'', sport:'', address:'', phoneCode:'+91', phone:'', website:'', country:'India' })
-  const [modules,setModules]= useState(['membership','courts'])
-  const [features,setFeatures]= useState({})     // { moduleId: Set<string> }
-  const [roles,  setRoles]  = useState(['owner','receptionist','court_mgr'])
-  const [invites,setInvites]= useState([{ email:'', role:'receptionist' }])
-  const [clubErr,setClubErr]= useState({})
+  const location = useLocation()
+  const { signup } = useAuth()
+  const [step, setStep] = useState(1)
+  const [club, setClub] = useState({ name:'', sport:'', address:'', phoneCode:'+91', phone:'', website:'', country:'India' })
+  const [modules, setModules] = useState(['membership','courts'])
+  const [features, setFeatures] = useState({})
+  const [roles, setRoles] = useState(['owner','receptionist','court_mgr'])
+  const [invites, setInvites] = useState([{ email:'', role:'receptionist' }])
+  const [clubErr, setClubErr] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Get account data from signup
+  const accountData = location.state?.accountData
+
+  useEffect(() => {
+    if (!accountData) {
+      // If no account data, redirect to signup
+      navigate('/signup')
+    }
+  }, [accountData, navigate])
 
   /* ── helpers ── */
   const toggleModule = (id) =>
@@ -123,10 +139,69 @@ export default function Onboarding() {
     return !Object.keys(e).length
   }
 
-  const next = () => {
+  const next = async () => {
     if (step === 1 && !validateClub()) return
     if (step < STEPS.length) setStep(s => s + 1)
-    else navigate('/dashboard')
+    else {
+      // Final step - create club
+      await createClub()
+    }
+  }
+
+  const createClub = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Prepare signup data
+      const signupData = {
+        firstName: accountData.firstName,
+        lastName: accountData.lastName,
+        email: accountData.email,
+        password: accountData.password,
+        confirmPassword: accountData.confirmPassword,
+        clubName: club.name,
+        clubAddress: club.address,
+        clubEmail: club.email || accountData.email,
+        clubPhone: `${club.phoneCode} ${club.phone}`,
+        clubWebsite: club.website,
+        sport: club.sport,
+        country: club.country,
+      }
+
+      const result = await signup(signupData)
+
+      if (result.success) {
+        // Update modules if different from default
+        const selectedModules = {
+          membership: modules.includes('membership'),
+          courtBooking: modules.includes('courts'),
+          shop: modules.includes('shop'),
+          bar: modules.includes('cafe'),
+          hr: modules.includes('staff'),
+          accounting: modules.includes('finance'),
+        }
+
+        // Only update if not all enabled
+        const allEnabled = Object.values(selectedModules).every(v => v)
+        if (!allEnabled) {
+          try {
+            await clubService.updateModules(selectedModules)
+          } catch (error) {
+            // Module update failed, but account created - continue anyway
+            console.error('Module update failed:', error)
+          }
+        }
+
+        navigate('/dashboard')
+      } else {
+        setError(result.message || 'Failed to create club. Please try again.')
+      }
+    } catch (error) {
+      setError(error.message || 'An error occurred. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const back = () => { if (step > 1) setStep(s => s - 1) }
@@ -573,6 +648,13 @@ export default function Onboarding() {
         {/* Progress */}
         {renderProgress()}
 
+        {/* Error Message */}
+        {error && (
+          <div className="p-4 mb-5 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-[13px] text-red-600">{error}</p>
+          </div>
+        )}
+
         {/* Card */}
         <div className="card p-6 lg:p-8">
           {renderStep()}
@@ -595,9 +677,16 @@ export default function Onboarding() {
                 Skip setup
               </button>
             )}
-            <button type="button" onClick={next} className="btn btn-primary gap-2 px-6">
+            <button type="button" onClick={next} className="btn btn-primary gap-2 px-6" disabled={loading}>
               {step === STEPS.length ? (
-                <><CheckCircle size={15} /> Launch Club</>
+                loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Launching Club...
+                  </>
+                ) : (
+                  <><CheckCircle size={15} /> Launch Club</>
+                )
               ) : (
                 <>Continue <ChevronRight size={15} /></>
               )}
