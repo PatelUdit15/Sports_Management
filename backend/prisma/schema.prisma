@@ -26,9 +26,61 @@ model Club {
   // Relations
   users              User[]
   moduleConfiguration ModuleConfiguration?
+  members            Member[]
 
   @@map("clubs")
 }
+
+// Member Model
+model Member {
+  id              Int             @id @default(autoincrement())
+  memberId        String          @unique @map("member_id") @db.VarChar(100)
+  clubId          String          @map("club_id") @db.VarChar(100)
+  fullName        String          @map("full_name") @db.VarChar(100)
+  email           String          @db.VarChar(100)
+  password        String?         @db.VarChar(255)
+  phone           String?         @db.VarChar(30)
+  age             Int?
+  birthday        String?         @db.VarChar(50)
+  gender          String?         @db.VarChar(20)
+  membershipTier  String          @map("membership_tier") @db.VarChar(50)
+  membershipPlan  String?         @map("membership_plan") @db.VarChar(100)
+  amountPaid      Decimal         @default(0) @map("amount_paid") @db.Decimal(10, 2)
+  status          String          @default("ACTIVE") @db.VarChar(50)
+  startDate       DateTime        @default(now()) @map("start_date")
+  endDate         DateTime?       @map("end_date")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @default(now()) @updatedAt @map("updated_at")
+
+  club            Club            @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+  payments        MemberPayment[]
+
+  @@index([clubId])
+  @@index([email])
+  @@index([memberId])
+  @@map("members")
+}
+
+// Member Payment Model
+model MemberPayment {
+  id             Int      @id @default(autoincrement())
+  paymentId      String   @unique @map("payment_id") @db.VarChar(100)
+  memberId       String   @map("member_id") @db.VarChar(100)
+  clubId         String   @map("club_id") @db.VarChar(100)
+  amount         Decimal  @db.Decimal(10, 2)
+  planTier       String   @map("plan_tier") @db.VarChar(50)
+  paymentMethod  String   @map("payment_method") @db.VarChar(50)
+  status         String   @default("COMPLETED") @db.VarChar(50)
+  transactionRef String?  @map("transaction_ref") @db.VarChar(100)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  member         Member   @relation(fields: [memberId], references: [memberId], onDelete: Cascade)
+
+  @@index([memberId])
+  @@index([clubId])
+  @@map("member_payments")
+}
+
 
 // User Model
 model User {

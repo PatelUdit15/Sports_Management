@@ -50,25 +50,48 @@ export default function Sidebar() {
     navigate('/login')
   }
 
-  // Filter navigation based on enabled modules
-  const filteredNav = nav.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      // Always show dashboard and settings
-      if (item.to === '/dashboard' || item.to === '/settings') return true
-      
-      // Check module access for other items
-      if (item.to === '/members') return hasModule('MEMBERSHIP')
-      if (item.to === '/court-bookings') return hasModule('COURT_BOOKING')
-      if (item.to === '/shop') return hasModule('SHOP')
-      if (item.to === '/cafe') return hasModule('BAR')
-      if (item.to === '/staff') return hasModule('HR')
-      if (item.to === '/finance') return hasModule('ACCOUNTING')
-      
-      // Default: show item
-      return true
-    })
-  })).filter(group => group.items.length > 0) // Remove empty groups
+  const isExecutiveOrHr = user?.role === 'SUPER_ADMIN' || user?.role === 'HR_MANAGER';
+
+  // Filter navigation based on role and enabled modules
+  let filteredNav;
+  if (!isExecutiveOrHr) {
+    const employeeItems = [
+      { to: '/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
+      { to: '/staff', label: 'My Leaves & Wages', icon: BadgeCheck },
+    ];
+
+    if (user?.role === 'RECEPTIONIST') {
+      if (hasModule('COURT_BOOKING')) employeeItems.push({ to: '/court-bookings', label: 'Court Bookings', icon: Trophy });
+      if (hasModule('MEMBERSHIP')) employeeItems.push({ to: '/members', label: 'Members', icon: Users });
+    } else if (user?.role === 'SHOP_INVENTORY_MANAGER') {
+      employeeItems.push({ to: '/shop', label: 'Pro Shop & Inventory', icon: ShoppingBag });
+    } else if (user?.role === 'BAR_CAFETERIA_STAFF') {
+      if (hasModule('BAR')) employeeItems.push({ to: '/cafe', label: 'Cafe/Bar', icon: Coffee });
+    } else if (user?.role === 'ACCOUNTANT') {
+      if (hasModule('ACCOUNTING')) employeeItems.push({ to: '/finance', label: 'Finance', icon: CreditCard });
+    }
+
+    filteredNav = [{ items: employeeItems }];
+  } else {
+    filteredNav = nav.map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        // Always show dashboard and settings
+        if (item.to === '/dashboard' || item.to === '/settings') return true;
+        
+        // Check module access for other items
+        if (item.to === '/members') return hasModule('MEMBERSHIP');
+        if (item.to === '/court-bookings') return hasModule('COURT_BOOKING');
+        if (item.to === '/shop') return hasModule('SHOP');
+        if (item.to === '/cafe') return hasModule('BAR');
+        if (item.to === '/staff') return hasModule('HR');
+        if (item.to === '/finance') return hasModule('ACCOUNTING');
+        
+        // Default: show item
+        return true;
+      })
+    })).filter(group => group.items.length > 0);
+  }
 
   return (
     <aside

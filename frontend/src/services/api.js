@@ -39,14 +39,20 @@ api.interceptors.response.use(
       const isAuthEndpoint =
         error.config?.url?.includes('/auth/login') ||
         error.config?.url?.includes('/auth/signup') ||
-        error.config?.url?.includes('/auth/me');
-      const isAuthPage =
+        error.config?.url?.includes('/auth/me') ||
+        error.config?.url?.includes('/public/');
+      const isPublicOrAuthPage =
         typeof window !== 'undefined' &&
-        (window.location.pathname === '/login' ||
+        (window.location.pathname === '/' ||
+         window.location.pathname === '/get-started' ||
+         window.location.pathname.startsWith('/user/') ||
+         window.location.pathname === '/payment' ||
+         window.location.pathname.startsWith('/member/') ||
+         window.location.pathname === '/login' ||
          window.location.pathname === '/signup' ||
          window.location.pathname === '/onboarding');
 
-      if (status === 401 && !isAuthEndpoint && !isAuthPage) {
+      if (status === 401 && !isAuthEndpoint && !isPublicOrAuthPage) {
         // Unauthorized - clear auth and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');

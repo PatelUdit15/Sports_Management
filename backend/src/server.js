@@ -18,6 +18,9 @@ import userRoutes from "./routes/userRoutes.js";
 import clubRoutes from "./routes/clubRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
+import publicRoutes from "./routes/publicRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
+import cafeRoutes from "./routes/cafeRoutes.js";
 
 const app = express();
 
@@ -98,6 +101,9 @@ app.use("/api/users", userRoutes);
 app.use("/api/club", clubRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/public", publicRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/cafe", cafeRoutes);
 
 // 404 handler
 app.use((req, res) => {
