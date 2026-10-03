@@ -6,7 +6,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -69,7 +69,7 @@ api.interceptors.response.use(
       console.warn('Network error targeting:', targetUrl, error);
       return Promise.reject({
         success: false,
-        message: `Network error. Could not connect to API server at ${targetUrl || 'http://localhost:5001/api'}. Please ensure the backend is running.`,
+        message: `Network error. Could not connect to API server at ${targetUrl || 'http://localhost:5000/api'}. Please ensure the backend is running.`,
         error: 'NETWORK_ERROR',
       });
     } else {
@@ -119,5 +119,90 @@ api.createEmployee = async (employeeData) => {
   return res.data;
 };
 
+// Enquiry CRM endpoints
+api.getEnquiries = async (params) => {
+  const res = await api.get('/enquiries', { params });
+  return res.data;
+};
+
+api.createEnquiry = async (enquiryData) => {
+  const res = await api.post('/enquiries', enquiryData);
+  return res.data;
+};
+
+api.updateEnquiryStatus = async (id, status, notes) => {
+  const res = await api.patch(`/enquiries/${id}/status`, { status, notes });
+  return res.data;
+};
+
+api.deleteEnquiry = async (id) => {
+  const res = await api.delete(`/enquiries/${id}`);
+  return res.data;
+};
+
+// Court Management endpoints
+api.getCourts = async (params) => {
+  const res = await api.get('/courts', { params });
+  return res.data;
+};
+
+api.getCourt = async (id) => {
+  const res = await api.get(`/courts/${id}`);
+  return res.data;
+};
+
+api.createCourt = async (courtData) => {
+  const res = await api.post('/courts', courtData);
+  return res.data;
+};
+
+api.updateCourt = async (id, courtData) => {
+  const res = await api.put(`/courts/${id}`, courtData);
+  return res.data;
+};
+
+api.deleteCourt = async (id) => {
+  const res = await api.delete(`/courts/${id}`);
+  return res.data;
+};
+
+api.getCourtOccupancy = async () => {
+  const res = await api.get('/courts/occupancy/utilization');
+  return res.data;
+};
+
+// Booking & Reservation endpoints
+api.getBookings = async (params) => {
+  const res = await api.get('/bookings', { params });
+  return res.data;
+};
+
+api.createBooking = async (bookingData) => {
+  const res = await api.post('/bookings', bookingData);
+  return res.data;
+};
+
+api.updateBookingStatus = async (id, status) => {
+  const res = await api.patch(`/bookings/${id}/status`, { status });
+  return res.data;
+};
+
+api.deleteBooking = async (id) => {
+  const res = await api.delete(`/bookings/${id}`);
+  return res.data;
+};
+
+api.getDailyLedger = async (params) => {
+  const res = await api.get('/bookings/daily-ledger', { params });
+  return res.data;
+};
+
+// Audit Trail endpoints
+api.getAuditLogs = async (params) => {
+  const res = await api.get('/audit-trail', { params });
+  return res.data;
+};
+
 export { api };
 export default api;
+

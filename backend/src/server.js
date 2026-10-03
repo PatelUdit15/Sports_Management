@@ -21,6 +21,10 @@ import staffRoutes from "./routes/staffRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import cafeRoutes from "./routes/cafeRoutes.js";
+import enquiryRoutes from "./routes/enquiryRoutes.js";
+import courtRoutes from "./routes/courtRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import auditRoutes from "./routes/auditRoutes.js";
 
 const app = express();
 
@@ -104,6 +108,10 @@ app.use("/api/staff", staffRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cafe", cafeRoutes);
+app.use("/api/enquiries", enquiryRoutes);
+app.use("/api/courts", courtRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/audit-trail", auditRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -63,6 +63,7 @@ export default function Sidebar() {
     if (user?.role === 'RECEPTIONIST') {
       if (hasModule('COURT_BOOKING')) employeeItems.push({ to: '/court-bookings', label: 'Court Bookings', icon: Trophy });
       if (hasModule('MEMBERSHIP')) employeeItems.push({ to: '/members', label: 'Members', icon: Users });
+      employeeItems.push({ to: '/enquiries', label: 'Enquiries', icon: HelpCircle });
     } else if (user?.role === 'SHOP_INVENTORY_MANAGER') {
       employeeItems.push({ to: '/shop', label: 'Pro Shop & Inventory', icon: ShoppingBag });
     } else if (user?.role === 'BAR_CAFETERIA_STAFF') {
@@ -86,6 +87,7 @@ export default function Sidebar() {
         if (item.to === '/cafe') return hasModule('BAR');
         if (item.to === '/staff') return hasModule('HR');
         if (item.to === '/finance') return hasModule('ACCOUNTING');
+        if (item.to === '/enquiries') return user?.role === 'SUPER_ADMIN' || user?.role === 'RECEPTIONIST';
         
         // Default: show item
         return true;
