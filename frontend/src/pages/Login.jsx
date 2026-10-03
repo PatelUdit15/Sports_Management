@@ -17,7 +17,12 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const result = await login(form)
+      const loginPayload = {
+        email: form.email.trim(),
+        password: form.password,
+        ...(form.role ? { role: form.role } : {}),
+      };
+      const result = await login(loginPayload)
       
       if (result.success) {
         navigate('/dashboard')

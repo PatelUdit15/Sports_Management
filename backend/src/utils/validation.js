@@ -52,6 +52,7 @@ export const loginSchema = Joi.object({
   }),
   role: Joi.string()
     .valid(...Object.values(ROLES))
+    .allow("", null)
     .optional()
     .messages({
       "any.only": "Invalid role selected",

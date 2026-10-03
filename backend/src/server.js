@@ -16,6 +16,8 @@ import { errorHandler } from "./utils/errorHandler.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import clubRoutes from "./routes/clubRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import staffRoutes from "./routes/staffRoutes.js";
 
 const app = express();
 
@@ -27,10 +29,32 @@ const app = express();
 app.use(helmet());
 
 // CORS
+const allowedOrigins = (env.CORS_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin)
+      if (!origin) return callback(null, true);
+
+      // In development or if origin matches localhost/127.0.0.1 or listed origins
+      if (
+        env.NODE_ENV === "development" ||
+        allowedOrigins.includes(origin) ||
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:")
+      ) {
+        return callback(null, origin);
+      }
+
+      return callback(null, false);
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
   })
 );
 
@@ -41,11 +65,15 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Cookie parser
 app.use(cookieParser());
 
-// Rate limiting for auth endpoints
+// Rate limiting for auth endpoints (relaxed in development)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === "development" ? 1000 : 10,
+  message: {
+    success: false,
+    message: "Too many requests from this IP, please try again later.",
+    error: "RATE_LIMIT_EXCEEDED",
+  },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -68,6 +96,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/club", clubRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/staff", staffRoutes);
 
 // 404 handler
 app.use((req, res) => {

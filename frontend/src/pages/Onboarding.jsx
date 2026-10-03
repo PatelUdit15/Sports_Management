@@ -10,9 +10,9 @@ import { clubService } from '../services/clubService'
 /* ── Step definitions ─────────────────────────────────────── */
 const STEPS = [
   { id: 1, label: 'Create Club',       icon: Building2  },
-  { id: 2, label: 'Select Modules',    icon: LayoutGrid },
+  { id: 2, label: 'Modules & Roles',   icon: LayoutGrid },
   { id: 3, label: 'Configure Features',icon: Sliders    },
-  { id: 4, label: 'Configure Roles',   icon: Users      },
+  { id: 4, label: 'Review Roles',      icon: Users      },
   { id: 5, label: 'Invite Staff',      icon: Send       },
   { id: 6, label: 'Review & Launch',   icon: CheckCircle},
 ]
@@ -59,6 +59,41 @@ const DEFAULT_ROLES = [
   { id: 'accountant',   label: 'Accountant',           desc: 'Invoices, payments, expenses and finance.',                perms: ['finance.*'] },
 ]
 
+/* ── Module to Role mapping & synchronization ─────────────── */
+const MODULE_ROLE_MAP = {
+  membership: ['receptionist'],
+  courts: ['court_mgr', 'receptionist'],
+  shop: ['shop_mgr'],
+  cafe: ['bar_staff', 'kitchen'],
+  staff: ['hr_mgr'],
+  finance: ['accountant'],
+  enquiries: ['receptionist'],
+  clients: ['accountant'],
+  website: [],
+  reports: [],
+  notifications: [],
+}
+
+const ROLE_MODULE_REQUIREMENTS = {
+  owner: [],
+  receptionist: ['membership', 'courts', 'enquiries'],
+  court_mgr: ['courts'],
+  shop_mgr: ['shop'],
+  bar_staff: ['cafe'],
+  kitchen: ['cafe'],
+  hr_mgr: ['staff'],
+  accountant: ['finance', 'clients'],
+}
+
+const computeRolesFromModules = (selectedModules) => {
+  const activeRoles = new Set(['owner'])
+  selectedModules.forEach(modId => {
+    const rolesForMod = MODULE_ROLE_MAP[modId] || []
+    rolesForMod.forEach(r => activeRoles.add(r))
+  })
+  return Array.from(activeRoles)
+}
+
 /* ── Country dial codes ─────────────────────────────────── */
 const COUNTRY_DIAL_CODES = [
   { code: '+91',  country: 'IN', label: 'IN (+91)' },
@@ -85,7 +120,7 @@ export default function Onboarding() {
   const [club, setClub] = useState({ name:'', sport:'', address:'', phoneCode:'+91', phone:'', website:'', country:'India' })
   const [modules, setModules] = useState(['membership','courts'])
   const [features, setFeatures] = useState({})
-  const [roles, setRoles] = useState(['owner','receptionist','court_mgr'])
+  const [roles, setRoles] = useState(() => computeRolesFromModules(['membership','courts']))
   const [invites, setInvites] = useState([{ email:'', role:'receptionist' }])
   const [clubErr, setClubErr] = useState({})
   const [loading, setLoading] = useState(false)
@@ -103,7 +138,21 @@ export default function Onboarding() {
 
   /* ── helpers ── */
   const toggleModule = (id) =>
-    setModules(m => m.includes(id) ? m.filter(x => x !== id) : [...m, id])
+    setModules(m => {
+      const next = m.includes(id) ? m.filter(x => x !== id) : [...m, id]
+      const nextRoles = computeRolesFromModules(next)
+      setRoles(nextRoles)
+
+      // Ensure any pending staff invite role remains valid
+      setInvites(invList => invList.map(inv => {
+        if (!nextRoles.includes(inv.role)) {
+          return { ...inv, role: nextRoles.find(r => r !== 'owner') || 'owner' }
+        }
+        return inv
+      }))
+
+      return next
+    })
 
   const toggleFeature = (modId, feat) =>
     setFeatures(f => {
@@ -329,27 +378,38 @@ export default function Onboarding() {
     </div>
   )
 
-  /* ── Step 2: Select Modules ── */
+  /* ── Step 2: Select Modules & Operating Roles ── */
   const renderStepModules = () => (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-[18px] font-bold text-gray-900">Select Modules</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-[18px] font-bold text-gray-900">Select Modules & Roles</h2>
+          <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
+            Auto-Linked Roles
+          </span>
+        </div>
         <p className="text-[13px] text-gray-500 mt-1">
-          Activate only the modules your club needs. You can change these later in Settings.
+          Activate the operations your club needs. Corresponding staff roles and access levels are automatically enabled with each module.
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
         {ALL_MODULES.map(m => {
           const active = modules.includes(m.id)
+          const unlockedRoleIds = MODULE_ROLE_MAP[m.id] || []
+          const unlockedRoles = unlockedRoleIds
+            .map(rId => DEFAULT_ROLES.find(r => r.id === rId))
+            .filter(Boolean)
+
           return (
             <button
               key={m.id}
               type="button"
               onClick={() => toggleModule(m.id)}
               className={[
-                'text-left p-4 rounded-xl border-2 transition-all duration-150',
+                'text-left p-4 rounded-xl border-2 transition-all duration-150 relative overflow-hidden',
                 active
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]'
+                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]/40 shadow-xs'
                   : 'border-gray-200 bg-white hover:border-gray-300',
               ].join(' ')}
             >
@@ -370,11 +430,64 @@ export default function Onboarding() {
                   {active && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
               </div>
+
+              {/* Linked role tag */}
+              {unlockedRoles.length > 0 && (
+                <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                    Unlocks:
+                  </span>
+                  {unlockedRoles.map(role => (
+                    <span
+                      key={role.id}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                        active
+                          ? 'bg-[#714B67] text-white shadow-2xs font-bold'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      <Users size={10} />
+                      <span>{role.label.split(' / ')[0]}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </button>
           )
         })}
       </div>
-      <p className="text-[12px] text-gray-400">{modules.length} module{modules.length !== 1 ? 's' : ''} selected</p>
+
+      {/* Live Unlocked Roles Summary Banner */}
+      <div className="card p-4 bg-gradient-to-r from-gray-50 to-[#F5EFF3]/40 border border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Users size={15} className="text-[#714B67]" />
+            <span className="text-[13px] font-bold text-gray-900">
+              Active Operating Roles ({roles.length})
+            </span>
+          </div>
+          <span className="text-[11px] text-[#714B67] font-semibold">
+            {modules.length} Modules Active
+          </span>
+        </div>
+        <p className="text-[11px] text-gray-500 mb-3">
+          Whenever you select or deselect modules above, the corresponding staff roles and access levels are automatically enabled.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {roles.map(rId => {
+            const r = DEFAULT_ROLES.find(x => x.id === rId)
+            return (
+              <span
+                key={rId}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold bg-white border border-gray-200 shadow-2xs text-gray-800"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{r?.label}</span>
+              </span>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 
@@ -428,16 +541,25 @@ export default function Onboarding() {
   /* ── Step 4: Configure Roles ── */
   const renderStepRoles = () => (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-[18px] font-bold text-gray-900">Configure Roles</h2>
-        <p className="text-[13px] text-gray-500 mt-1">
-          Select the staff role templates your club needs. The Owner role is always included.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[18px] font-bold text-gray-900">Configure Roles & Access</h2>
+          <p className="text-[13px] text-gray-500 mt-1">
+            Roles are pre-selected based on your active modules in Step 2. You can inspect permissions or fine-tune role availability.
+          </p>
+        </div>
+        <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200">
+          Synced with Modules
+        </span>
       </div>
+
       <div className="space-y-3 pt-2">
         {DEFAULT_ROLES.map(r => {
-          const active  = roles.includes(r.id)
-          const locked  = r.id === 'owner'
+          const active = roles.includes(r.id)
+          const locked = r.id === 'owner'
+          const requiredModuleNames = ROLE_MODULE_REQUIREMENTS[r.id] || []
+          const parentModuleObj = ALL_MODULES.find(m => requiredModuleNames.includes(m.id))
+
           return (
             <button
               key={r.id}
@@ -452,11 +574,22 @@ export default function Onboarding() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[13px] font-semibold ${active ? 'text-[var(--color-primary)]' : 'text-gray-900'}`}>
                       {r.label}
                     </span>
-                    {locked && <span className="badge badge-purple text-[10px]">Required</span>}
+                    {locked ? (
+                      <span className="badge badge-purple text-[10px]">Required • Super Admin</span>
+                    ) : active ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        <CheckCircle size={10} />
+                        <span>Active via {parentModuleObj?.label || 'Modules'}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-500">
+                        Inactive • Enable {parentModuleObj?.label || 'Module'} in Step 2 to unlock
+                      </span>
+                    )}
                   </div>
                   <p className="text-[12px] text-gray-500 mt-0.5">{r.desc}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
