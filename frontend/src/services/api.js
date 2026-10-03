@@ -203,6 +203,52 @@ api.getAuditLogs = async (params) => {
   return res.data;
 };
 
+// Finance & Accounts endpoints
+api.getFinanceSummary = async (params) => {
+  const res = await api.get('/finance/summary', { params });
+  return res.data;
+};
+
+api.getFinanceTransactions = async (params) => {
+  const res = await api.get('/finance/transactions', { params });
+  return res.data;
+};
+
+api.createFinanceTransaction = async (data) => {
+  const res = await api.post('/finance/transactions', data);
+  return res.data;
+};
+
+api.updateFinanceTransactionStatus = async (id, status) => {
+  const res = await api.patch(`/finance/transactions/${id}/status`, { status });
+  return res.data;
+};
+
+api.deleteFinanceTransaction = async (id) => {
+  const res = await api.delete(`/finance/transactions/${id}`);
+  return res.data;
+};
+
+api.getFinanceInvoices = async (params) => {
+  const res = await api.get('/finance/invoices', { params });
+  return res.data;
+};
+
+api.createFinanceInvoice = async (data) => {
+  const res = await api.post('/finance/invoices', data);
+  return res.data;
+};
+
+api.updateFinanceInvoiceStatus = async (id, status, paymentMethod) => {
+  const res = await api.patch(`/finance/invoices/${id}/status`, { status, paymentMethod });
+  return res.data;
+};
+
+api.deleteFinanceInvoice = async (id) => {
+  const res = await api.delete(`/finance/invoices/${id}`);
+  return res.data;
+};
+
 export { api };
 export default api;
 
