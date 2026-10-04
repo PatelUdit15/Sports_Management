@@ -18,9 +18,101 @@ class AppError extends Error {
 
 export class ProductService {
   /**
+   * Seed initial sports inventory items if empty for this club
+   */
+  static async seedInitialProductsIfEmpty(clubId) {
+    try {
+      const countRes = await prisma.$queryRawUnsafe(
+        `SELECT COUNT(*)::int as count FROM products WHERE club_id = $1`,
+        clubId
+      );
+      const count = countRes[0]?.count || 0;
+      if (count === 0) {
+        const defaultItems = [
+          {
+            name: "Pro Aero Carbon Tennis Racquet",
+            category: "Equipment",
+            photo: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=500&auto=format&fit=crop&q=80",
+            price: 4999.00,
+            quantity: 18,
+            min_quantity: 4,
+            description: "High-modulus carbon graphite frame offering explosive power and pinpoint control."
+          },
+          {
+            name: "Championship Feather Shuttles (Pack of 12)",
+            category: "Accessories",
+            photo: "https://images.unsplash.com/photo-1613918108466-292b78a8ef95?w=500&auto=format&fit=crop&q=80",
+            price: 1250.00,
+            quantity: 35,
+            min_quantity: 6,
+            description: "Tournament grade goose feather shuttlecocks with durable composite cork base."
+          },
+          {
+            name: "Club Elite Performance Dry-Fit Jersey",
+            category: "Apparel",
+            photo: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&auto=format&fit=crop&q=80",
+            price: 1499.00,
+            quantity: 25,
+            min_quantity: 5,
+            description: "Official club breathable polyester jersey with moisture-wicking technology."
+          },
+          {
+            name: "Pro Court Grip Shoes (Non-Marking)",
+            category: "Footwear",
+            photo: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=80",
+            price: 3799.00,
+            quantity: 14,
+            min_quantity: 3,
+            description: "Cushioned court shoes with gum rubber grip sole approved for all indoor & outdoor surfaces."
+          },
+          {
+            name: "Whey Protein Isolate Recovery Powder (1kg)",
+            category: "Nutrition",
+            photo: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500&auto=format&fit=crop&q=80",
+            price: 2899.00,
+            quantity: 22,
+            min_quantity: 5,
+            description: "27g ultra-pure protein per scoop enriched with BCAAs for fast muscle repair."
+          },
+          {
+            name: "Heavy Duty Multi-Racket Kit Bag",
+            category: "Accessories",
+            photo: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=80",
+            price: 2199.00,
+            quantity: 12,
+            min_quantity: 3,
+            description: "Thermal-guarded compartments holding up to 6 rackets, shoes, and apparel."
+          }
+        ];
+
+        for (const item of defaultItems) {
+          const catPrefix = (item.category.substring(0, 3) || 'PRD').toUpperCase();
+          const pId = `PRD-${catPrefix}-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+          await prisma.$executeRawUnsafe(
+            `INSERT INTO products (product_id, club_id, name, category, photo, price, quantity, min_quantity, description, status, created_by, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'IN_STOCK', 'Club Pro Shop', NOW(), NOW())`,
+            pId,
+            clubId,
+            item.name,
+            item.category,
+            item.photo,
+            item.price,
+            item.quantity,
+            item.min_quantity,
+            item.description
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("Could not seed products:", e.message);
+    }
+  }
+
+  /**
    * Get all products with live stock status and catalog metrics
    */
   static async getProducts(clubId, query = {}) {
+    await this.seedInitialProductsIfEmpty(clubId);
     const { category, search, stockStatus } = query;
 
     let sql = `SELECT * FROM products WHERE club_id = $1`;

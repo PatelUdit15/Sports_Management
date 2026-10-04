@@ -24,9 +24,58 @@ export class CourtService {
    * Initialise clean in-memory court store for a club (empty array, NO dummy data)
    */
   static _init(clubId) {
-    if (!clubCourtsState.has(clubId)) {
-      clubCourtCounters.set(clubId, 0);
-      clubCourtsState.set(clubId, []);
+    if (!clubCourtsState.has(clubId) || clubCourtsState.get(clubId).length === 0) {
+      clubCourtCounters.set(clubId, 4);
+      clubCourtsState.set(clubId, [
+        {
+          id: "CRT-1",
+          name: "Center Court 1 (Championship)",
+          sportType: "Tennis",
+          surface: "Pro Cushion Hard Court",
+          hourlyRate: 1200,
+          indoor: false,
+          status: "Active",
+          notes: "Equipped with tournament floodlights & umpire chair",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: "CRT-2",
+          name: "Court 2 (Synthetic Turf)",
+          sportType: "Tennis",
+          surface: "Synthetic Turf",
+          hourlyRate: 1000,
+          indoor: false,
+          status: "Active",
+          notes: "Ideal for club matches and coaching sessions",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: "CRT-3",
+          name: "Indoor Arena Court A",
+          sportType: "Badminton",
+          surface: "Teakwood BWF Approved",
+          hourlyRate: 800,
+          indoor: true,
+          status: "Active",
+          notes: "Fully air-conditioned indoor wooden court",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: "CRT-4",
+          name: "Practice & Training Court",
+          sportType: "Multi-Sport",
+          surface: "Acrylic Flex",
+          hourlyRate: 600,
+          indoor: false,
+          status: "Active",
+          notes: "Wall drill and ball machine equipped",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
     }
     return clubCourtsState.get(clubId);
   }

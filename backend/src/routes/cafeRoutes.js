@@ -1,11 +1,14 @@
 import { Router } from "express";
 import { CafeController } from "../controllers/cafeController.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { authorizeRole } from "../middleware/authorizeRole.js";
+import { ROLES } from "../config/constants.js";
 
 const router = Router();
 
-// All cafe management endpoints require authentication
+// All cafe management endpoints require authentication and SUPER_ADMIN or BAR_CAFETERIA_STAFF role
 router.use(authenticate);
+router.use(authorizeRole(ROLES.SUPER_ADMIN, ROLES.BAR_CAFETERIA_STAFF));
 
 // Menu & Combo items
 router.get("/menu", CafeController.getMenuItems);

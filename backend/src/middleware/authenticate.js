@@ -30,6 +30,14 @@ export const authenticate = async (req, res, next) => {
     // Verify token
     const decoded = verifyToken(token);
 
+    if (!decoded || !decoded.userId) {
+      throw new AppError(
+        "Invalid session token for staff/admin operations",
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
+    }
+
     // Get user from database
     const user = await prisma.user.findUnique({
       where: { userId: decoded.userId },

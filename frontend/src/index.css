@@ -7,9 +7,9 @@
   --sidebar-width:       200px;
   --topbar-height:       56px;
 
-  --color-primary:       #6B3FA0;
-  --color-primary-hover: #5a348a;
-  --color-primary-light: #f3eeff;
+  --color-primary:       #714B67;
+  --color-primary-hover: #57344f;
+  --color-primary-light: #f8f3f7;
   --color-primary-text:  #ffffff;
 
   --color-bg:            #f5f6fa;
@@ -119,11 +119,11 @@
   .btn-primary {
     background: var(--color-primary);
     color:      #fff;
-    box-shadow: 0 1px 3px rgba(107,63,160,0.3);
+    box-shadow: 0 1px 3px rgba(113,75,103,0.25);
   }
   .btn-primary:hover {
     background: var(--color-primary-hover);
-    box-shadow: 0 3px 8px rgba(107,63,160,0.35);
+    box-shadow: 0 3px 8px rgba(113,75,103,0.3);
   }
 
   .btn-secondary {
@@ -157,7 +157,7 @@
   .badge-warning { background: #fef3c7; color: #b45309; }
   .badge-info    { background: #dbeafe; color: #1d4ed8; }
   .badge-gray    { background: #f3f4f6; color: #4b5563; }
-  .badge-purple  { background: #f3eeff; color: #6b3fa0; }
+  .badge-purple  { background: #f8f3f7; color: #714B67; border: 1px solid rgba(113,75,103,0.2); }
 
   /* ── Form ── */
   .form-label {
@@ -180,7 +180,7 @@
     transition:    border-color 0.15s, box-shadow 0.15s;
   }
   .form-input:hover       { border-color: #d1d5db; }
-  .form-input:focus       { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(107,63,160,0.1); }
+  .form-input:focus       { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(113,75,103,0.12); }
   .form-input::placeholder { color: #9ca3af; }
 
   /* ── Table ── */

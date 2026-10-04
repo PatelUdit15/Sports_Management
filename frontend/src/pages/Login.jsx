@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, Trophy } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { getRoleHomeRoute } from '../utils/rbac'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -25,7 +26,9 @@ export default function Login() {
       const result = await login(loginPayload)
       
       if (result.success) {
-        navigate('/dashboard')
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const targetRoute = getRoleHomeRoute(storedUser.role);
+        navigate(targetRoute, { replace: true });
       } else {
         setErrors({ general: result.message || 'Login failed. Please try again.' })
       }

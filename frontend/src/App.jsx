@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ROLES } from './utils/rbac'
 
 // Public & User Flow Pages
 import SkylineLanding from './pages/public/SkylineLanding'
@@ -9,6 +10,7 @@ import UserLogin from './pages/public/UserLogin'
 import UserRegister from './pages/public/UserRegister'
 import ClubsDirectory from './pages/public/ClubsDirectory'
 import PaymentGateway from './pages/public/PaymentGateway'
+import MemberDashboard from './pages/MemberDashboard'
 
 // Club Owner & Staff Management Pages
 import Login from './pages/Login'
@@ -48,36 +50,127 @@ function App() {
 
         {/* 5. Payment Gateway & Member ID Generation */}
         <Route path="/payment" element={<PaymentGateway />} />
+        
+        {/* 6. Member Dashboard (Dedicated portal for club members) */}
+        <Route path="/member/dashboard" element={<MemberDashboard />} />
 
-        {/* 6. Club Owner & Staff Auth */}
+        {/* 7. Club Owner & Staff Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/onboarding" element={<Onboarding />} />
 
-        {/* 7. Protected Club Owner / Staff Operations */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }>
+        {/* 8. Super Admin Dashboard (Exclusively for Super Admin) */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
         </Route>
 
-        <Route path="/" element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }>
-          <Route path="members" element={<Members />} />
-          <Route path="court-bookings" element={<CourtBookings />} />
-          <Route path="shop" element={<Shop />} />
-          <Route path="cafe" element={<Cafe />} />
-          <Route path="staff" element={<Staff />} />
-          <Route path="finance" element={<Finance />} />
-          <Route path="enquiries" element={<Enquiries />} />
-          <Route path="clients" element={<Clients />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<Settings />} />
+        {/* 9. Role-Protected Operational Modules */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* HR Management - Super Admin & HR Manager */}
+          <Route
+            path="staff"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.HR_MANAGER]}>
+                <Staff />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Inventory Management - Super Admin & Inventory Manager */}
+          <Route
+            path="shop"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.SHOP_INVENTORY_MANAGER]}>
+                <Shop />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Cafe Management - Super Admin & Cafe Staff */}
+          <Route
+            path="cafe"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.BAR_CAFETERIA_STAFF]}>
+                <Cafe />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Finance Management - Super Admin & Finance Manager / Accountant */}
+          <Route
+            path="finance"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.ACCOUNTANT]}>
+                <Finance />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Settings Section - Super Admin only */}
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Front Desk & Reception Operations */}
+          <Route
+            path="court-bookings"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.RECEPTIONIST]}>
+                <CourtBookings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="members"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.RECEPTIONIST]}>
+                <Members />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="enquiries"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, ROLES.RECEPTIONIST]}>
+                <Enquiries />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="clients"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+                <Clients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reports"
+            element={
+              <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         {/* Fallback */}

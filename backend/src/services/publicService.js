@@ -6,6 +6,7 @@
 
 import prisma from "../config/database.js";
 import bcrypt from "bcryptjs";
+import { generateToken } from "../utils/jwt.js";
 
 // Standard SaaS membership tiers for clubs
 export const CLUB_TIERS = {
@@ -177,13 +178,15 @@ export class PublicService {
       };
     } else {
       // Create provisional member record
+      const defaultClub = await prisma.club.findFirst({ where: { isActive: true } });
+      const initialClubId = defaultClub ? defaultClub.clubId : "CLUB-1791026171222";
       const tempId = `PROV-${Date.now().toString(36).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
       const result = await prisma.$queryRawUnsafe(
         `INSERT INTO members (member_id, club_id, full_name, email, password, phone, age, birthday, gender, membership_tier, membership_plan, amount_paid, status, start_date, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW(), NOW())
          RETURNING id, member_id, full_name, email, phone, age, birthday, gender`,
         tempId,
-        "PENDING_SELECTION",
+        initialClubId,
         fullName.trim(),
         cleanEmail,
         hashedPassword,
@@ -249,9 +252,18 @@ export class PublicService {
       }
     }
 
+    const token = generateToken({
+      userId: member.member_id,
+      memberId: member.member_id,
+      email: member.email,
+      role: "MEMBER",
+      clubId: member.club_id,
+    });
+
     return {
       success: true,
       message: "Login successful",
+      token,
       user: {
         id: member.id,
         memberId: member.member_id,
@@ -264,6 +276,7 @@ export class PublicService {
         clubId: member.club_id,
         membershipTier: member.membership_tier,
         status: member.status,
+        token,
       },
     };
   }
@@ -385,11 +398,21 @@ export class PublicService {
       txRef
     );
 
+    const token = generateToken({
+      userId: officialMemberId,
+      memberId: officialMemberId,
+      email: cleanEmail,
+      role: "MEMBER",
+      clubId: club.clubId,
+    });
+
     return {
       success: true,
       message: `Payment confirmed! Welcome to ${club.name}.`,
+      token,
       membership: {
         memberId: officialMemberId,
+        token,
         fullName: cleanName,
         email: cleanEmail,
         club: {

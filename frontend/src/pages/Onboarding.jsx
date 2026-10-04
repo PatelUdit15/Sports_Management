@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Trophy, Building2, LayoutGrid, Sliders, Users, Send, CheckCircle,
-  ChevronRight, ChevronLeft, MapPin, Phone, Globe, Upload,
+  ChevronRight, ChevronLeft, MapPin, Phone, Globe, Upload, X, Image as ImageIcon,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { clubService } from '../services/clubService'
@@ -117,7 +117,7 @@ export default function Onboarding() {
   const location = useLocation()
   const { signup } = useAuth()
   const [step, setStep] = useState(1)
-  const [club, setClub] = useState({ name:'', sport:'', address:'', phoneCode:'+91', phone:'', website:'', country:'India' })
+  const [club, setClub] = useState({ name:'', sport:'', address:'', phoneCode:'+91', phone:'', website:'', country:'India', logo: null })
   const [modules, setModules] = useState(['membership','courts'])
   const [features, setFeatures] = useState({})
   const [roles, setRoles] = useState(() => computeRolesFromModules(['membership','courts']))
@@ -125,6 +125,93 @@ export default function Onboarding() {
   const [clubErr, setClubErr] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // Drag & drop logo upload state
+  const fileInputRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [logoPreview, setLogoPreview] = useState(null)
+  const [logoFileName, setLogoFileName] = useState('')
+  const [logoFileSize, setLogoFileSize] = useState('')
+  const [logoError, setLogoError] = useState('')
+
+  const handleLogoFiles = (files) => {
+    setLogoError('')
+    if (!files || files.length === 0) return
+
+    const file = files[0]
+
+    // Validate image format
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(png|jpe?g|webp|svg)$/i)) {
+      setLogoError('Invalid file format. Please upload a PNG, JPG, WebP, or SVG image.')
+      return
+    }
+
+    // Validate size (max 2MB)
+    const maxSize = 2 * 1024 * 1024
+    if (file.size > maxSize) {
+      setLogoError('File exceeds 2 MB limit. Please select a smaller image.')
+      return
+    }
+
+    const sizeStr = file.size < 1024 * 1024
+      ? `${(file.size / 1024).toFixed(1)} KB`
+      : `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+
+    setLogoFileName(file.name)
+    setLogoFileSize(sizeStr)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target.result
+      setLogoPreview(dataUrl)
+      setClub(c => ({ ...c, logo: dataUrl }))
+    }
+    reader.onerror = () => {
+      setLogoError('Unable to read the selected file. Please try again.')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragEnter = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.currentTarget.contains(e.relatedTarget)) return
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    if (e.dataTransfer && e.dataTransfer.files) {
+      handleLogoFiles(e.dataTransfer.files)
+    }
+  }
+
+  const handleRemoveLogo = (e) => {
+    if (e) e.stopPropagation()
+    setLogoPreview(null)
+    setLogoFileName('')
+    setLogoFileSize('')
+    setLogoError('')
+    setClub(c => ({ ...c, logo: null }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   // Get account data from signup
   const accountData = location.state?.accountData
@@ -257,35 +344,36 @@ export default function Onboarding() {
 
   /* ── Step progress bar ── */
   const renderProgress = () => (
-    <div className="flex items-center gap-0 mb-8">
+    <div className="flex items-center gap-0 mb-6 bg-white border border-[#E5E7EB] rounded-2xl p-4 sm:p-5 shadow-xs">
       {STEPS.map((s, idx) => {
         const Icon = s.icon
         const done    = step > s.id
         const current = step === s.id
         return (
           <div key={s.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center flex-shrink-0">
+            <div className="flex flex-col items-center flex-shrink-0 mx-auto">
               <div
                 className={[
-                  'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 text-[12px] font-bold',
-                  done    ? 'bg-emerald-500 text-white'   : '',
-                  current ? 'text-white'                  : '',
-                  !done && !current ? 'bg-gray-100 text-gray-400' : '',
+                  'w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 text-[12px] font-bold',
+                  done    ? 'bg-emerald-600 text-white shadow-2xs'   : '',
+                  current ? 'bg-[#714B67] text-white shadow-xs ring-4 ring-[#714B67]/20 scale-105' : '',
+                  !done && !current ? 'bg-gray-100 text-gray-400 border border-gray-200' : '',
                 ].join(' ')}
-                style={current ? { background: 'var(--color-primary)' } : {}}
               >
-                {done ? <CheckCircle size={16} /> : <Icon size={15} />}
+                {done ? <CheckCircle size={16} /> : <Icon size={16} />}
               </div>
               <span className={[
-                'text-[10px] mt-1 font-medium text-center leading-tight hidden sm:block',
-                current ? 'text-[var(--color-primary)]' : done ? 'text-emerald-600' : 'text-gray-400',
+                'text-[10px] mt-1.5 font-semibold text-center leading-tight hidden sm:block',
+                current ? 'text-[#714B67] font-bold' : done ? 'text-emerald-700' : 'text-gray-400',
               ].join(' ')}>
                 {s.label}
               </span>
             </div>
             {idx < STEPS.length - 1 && (
-              <div className="flex-1 h-px mx-1 mt-0 sm:-mt-4"
-                style={{ background: step > s.id ? '#10b981' : '#e5e7eb' }} />
+              <div
+                className="flex-1 h-0.5 mx-2 mt-0 sm:-mt-4 transition-colors"
+                style={{ background: step > s.id ? '#10b981' : '#e5e7eb' }}
+              />
             )}
           </div>
         )
@@ -367,12 +455,92 @@ export default function Onboarding() {
           </div>
         </div>
         <div className="sm:col-span-2">
-          <label className="form-label">Club Logo (optional)</label>
-          <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-light)] transition-colors cursor-pointer">
-            <Upload size={20} className="mx-auto text-gray-400 mb-2" />
-            <p className="text-[12px] text-gray-500">Click to upload or drag & drop</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">PNG, JPG up to 2 MB</p>
-          </div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5">Club Logo (optional)</label>
+          
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+            onChange={(e) => handleLogoFiles(e.target.files)}
+            className="hidden"
+            id="club-logo-upload-input"
+          />
+
+          {logoPreview ? (
+            <div className="border border-purple-200/80 bg-purple-50/40 rounded-2xl p-4 transition-all shadow-2xs animate-fade-in">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-16 h-16 rounded-xl bg-white border-2 border-[#714B67]/30 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-xs">
+                    <img
+                      src={logoPreview}
+                      alt="Club Logo Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-900 truncate">{logoFileName || 'club-logo.png'}</span>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#714B67] bg-purple-100/70 border border-purple-200 px-2 py-0.5 rounded-full">
+                        <CheckCircle size={10} /> Ready
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{logoFileSize} • Image attached</p>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-[11px] font-bold text-[#714B67] hover:underline mt-1 inline-block cursor-pointer"
+                    >
+                      Change photo
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveLogo}
+                  title="Remove logo"
+                  className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-7 text-center transition-all duration-200 cursor-pointer select-none ${
+                isDragging
+                  ? 'border-[#714B67] bg-purple-50/60 ring-4 ring-[#714B67]/15 scale-[1.01]'
+                  : 'border-gray-200 bg-white hover:border-[#714B67] hover:bg-purple-50/30'
+              }`}
+            >
+              <div className={`w-12 h-12 rounded-2xl mx-auto mb-2.5 flex items-center justify-center transition-all ${
+                isDragging ? 'bg-[#714B67] text-white scale-110 shadow-xs' : 'bg-purple-50 text-[#714B67] border border-purple-200/60'
+              }`}>
+                <Upload size={20} className={isDragging ? 'animate-bounce' : ''} />
+              </div>
+              <p className="text-xs font-medium text-gray-700">
+                {isDragging ? (
+                  <span className="text-[#714B67] font-bold">Drop your image here!</span>
+                ) : (
+                  <>
+                    <span className="text-[#714B67] font-bold underline cursor-pointer">Click to upload</span> or drag &amp; drop
+                  </>
+                )}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-1">PNG, JPG, WebP, SVG up to 2 MB</p>
+            </div>
+          )}
+
+          {logoError && (
+            <p className="text-[11px] text-red-600 font-semibold mt-1.5 flex items-center gap-1">
+              <span>⚠️</span> {logoError}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -407,9 +575,9 @@ export default function Onboarding() {
               type="button"
               onClick={() => toggleModule(m.id)}
               className={[
-                'text-left p-4 rounded-xl border-2 transition-all duration-150 relative overflow-hidden',
+                'text-left p-4 rounded-2xl border-2 transition-all duration-150 relative overflow-hidden cursor-pointer',
                 active
-                  ? 'border-[var(--color-primary)] bg-[var(--color-primary-light)]/40 shadow-xs'
+                  ? 'border-[#714B67] bg-purple-50/40 shadow-xs ring-1 ring-[#714B67]/20'
                   : 'border-gray-200 bg-white hover:border-gray-300',
               ].join(' ')}
             >
@@ -417,7 +585,7 @@ export default function Onboarding() {
                 <div className="flex items-start gap-3 min-w-0">
                   <span className="text-[20px] leading-none flex-shrink-0 mt-0.5">{m.icon}</span>
                   <div className="min-w-0">
-                    <div className={`text-[13px] font-semibold leading-tight ${active ? 'text-[var(--color-primary)]' : 'text-gray-900'}`}>
+                    <div className={`text-[13px] font-bold leading-tight ${active ? 'text-[#714B67]' : 'text-gray-900'}`}>
                       {m.label}
                     </div>
                     <div className="text-[11px] text-gray-500 mt-1 leading-relaxed line-clamp-2">{m.desc}</div>
@@ -425,7 +593,7 @@ export default function Onboarding() {
                 </div>
                 <div className={[
                   'w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all',
-                  active ? 'border-[var(--color-primary)] bg-[var(--color-primary)]' : 'border-gray-300',
+                  active ? 'border-[#714B67] bg-[#714B67]' : 'border-gray-300',
                 ].join(' ')}>
                   {active && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
@@ -440,9 +608,9 @@ export default function Onboarding() {
                   {unlockedRoles.map(role => (
                     <span
                       key={role.id}
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
                         active
-                          ? 'bg-[#714B67] text-white shadow-2xs font-bold'
+                          ? 'bg-[#714B67] text-white shadow-2xs'
                           : 'bg-gray-100 text-gray-500'
                       }`}
                     >
@@ -669,9 +837,17 @@ export default function Onboarding() {
 
       {/* Club */}
       <div className="card p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Building2 size={15} className="text-gray-400" />
-          <h3 className="text-[13px] font-semibold text-gray-900">Club Details</h3>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Building2 size={15} className="text-gray-400" />
+            <h3 className="text-[13px] font-semibold text-gray-900">Club Details</h3>
+          </div>
+          {logoPreview && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-gray-400">Logo:</span>
+              <img src={logoPreview} alt="Club Logo" className="w-7 h-7 rounded-lg object-cover border border-purple-200 shadow-2xs" />
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-3 text-[12px]">
           <div><span className="text-gray-400">Name</span><div className="font-medium text-gray-800 mt-0.5">{club.name || '—'}</div></div>
@@ -760,21 +936,22 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{ background: 'var(--color-bg)' }}>
+    <div className="min-h-screen bg-[#F5F6FA] text-gray-900 py-10 px-4 selection:bg-[#714B67] selection:text-white">
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--color-primary)' }}>
-            <Trophy size={17} color="#fff" />
+        <div className="flex items-center gap-3 mb-6 bg-white border border-[#E5E7EB] rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-[#714B67] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+            <Trophy size={18} />
           </div>
           <div>
-            <div className="text-[14px] font-bold text-gray-900">Skyline Sports Club</div>
-            <div className="text-[11px] text-gray-400">Club Setup Wizard</div>
+            <div className="text-[15px] font-bold text-gray-900 tracking-tight">Skyline Sports Club</div>
+            <div className="text-[11px] text-gray-500 font-medium">Club Setup & Launch Wizard</div>
           </div>
-          <div className="ml-auto text-[12px] text-gray-400 font-medium">
-            Step {step} of {STEPS.length}
+          <div className="ml-auto">
+            <span className="px-3 py-1 rounded-full bg-purple-50 text-[#714B67] border border-purple-200 text-xs font-bold">
+              Step {step} of {STEPS.length}
+            </span>
           </div>
         </div>
 
@@ -783,45 +960,59 @@ export default function Onboarding() {
 
         {/* Error Message */}
         {error && (
-          <div className="p-4 mb-5 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-[13px] text-red-600">{error}</p>
+          <div className="p-4 mb-5 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-[13px] text-red-600 font-medium">{error}</p>
           </div>
         )}
 
-        {/* Card */}
-        <div className="card p-6 lg:p-8">
+        {/* Main Card */}
+        <div className="bg-white border border-[#E5E7EB] rounded-2xl p-6 sm:p-8 shadow-xs">
           {renderStep()}
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-5">
+        <div className="flex items-center justify-between mt-6">
           <button
             type="button"
             onClick={back}
-            className={`btn btn-secondary gap-2 ${step === 1 ? 'invisible' : ''}`}
+            className={`px-4 py-2.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${step === 1 ? 'invisible' : ''}`}
           >
-            <ChevronLeft size={15} /> Back
+            <ChevronLeft size={16} /> Back
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {step < STEPS.length && (
-              <button type="button" onClick={() => navigate('/dashboard')}
-                className="btn btn-ghost text-[12px] text-gray-500">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="text-xs font-semibold text-gray-500 hover:text-[#714B67] px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+              >
                 Skip setup
               </button>
             )}
-            <button type="button" onClick={next} className="btn btn-primary gap-2 px-6" disabled={loading}>
+            <button
+              type="button"
+              onClick={next}
+              className="px-6 py-2.5 rounded-xl bg-[#714B67] hover:bg-[#57344f] text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              disabled={loading}
+            >
               {step === STEPS.length ? (
                 loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Launching Club...
+                    <span>Launching Club...</span>
                   </>
                 ) : (
-                  <><CheckCircle size={15} /> Launch Club</>
+                  <>
+                    <CheckCircle size={16} />
+                    <span>Launch Club</span>
+                  </>
                 )
               ) : (
-                <>Continue <ChevronRight size={15} /></>
+                <>
+                  <span>Continue</span>
+                  <ChevronRight size={16} />
+                </>
               )}
             </button>
           </div>

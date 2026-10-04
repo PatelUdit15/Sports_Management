@@ -16,7 +16,7 @@ const api = axios.create({
 // Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('member_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -249,6 +249,29 @@ api.deleteFinanceInvoice = async (id) => {
   return res.data;
 };
 
+// Member Dashboard endpoints
+export const getMemberProfile = async () => {
+  const res = await api.get('/member-dashboard/me');
+  return res.data;
+};
+
+export const getCourtMatrix = async (date) => {
+  const res = await api.get('/member-dashboard/courts/matrix', {
+    params: date ? { date } : {}
+  });
+  return res.data;
+};
+
+export const memberBookCourt = async (bookingData) => {
+  const res = await api.post('/member-dashboard/courts/book', bookingData);
+  return res.data;
+};
+
+api.getMemberProfile = getMemberProfile;
+api.getCourtMatrix = getCourtMatrix;
+api.memberBookCourt = memberBookCourt;
+
 export { api };
 export default api;
+
 

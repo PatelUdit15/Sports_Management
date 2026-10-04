@@ -129,8 +129,15 @@ export default function PaymentGateway() {
 
       if (res.success && res.data) {
         setConfirmedData(res.data);
-        // Save confirmed pass to storage
+        // Save confirmed pass and tokens to storage
         localStorage.setItem('activeMemberPass', JSON.stringify(res.data));
+        if (res.data.token) {
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('member_token', res.data.token);
+        }
+        if (res.data.member) {
+          localStorage.setItem('member_data', JSON.stringify(res.data.member));
+        }
       } else {
         setError(res.message || 'Payment processing failed');
       }
@@ -150,26 +157,24 @@ export default function PaymentGateway() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F0C20] text-gray-100 flex flex-col justify-between selection:bg-[#8B5CF6] selection:text-white">
+    <div className="min-h-screen bg-[#F5F6FA] text-gray-900 flex flex-col justify-between selection:bg-[#714B67] selection:text-white">
       {/* Top Header */}
-      <header className="px-6 py-5 border-b border-white/10 backdrop-blur-md bg-[#0F0C20]/70">
+      <header className="px-6 py-4 border-b border-[#E5E7EB] bg-white shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#7C3AED] to-[#EC4899] p-0.5 shadow-md shadow-purple-500/30">
-              <div className="w-full h-full bg-[#0F0C20] rounded-[10px] flex items-center justify-center">
-                <Trophy size={18} className="text-[#A855F7]" />
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-[#714B67] flex items-center justify-center shadow-xs">
+              <Trophy size={18} className="text-white" />
             </div>
             <div>
-              <div className="text-[16px] font-bold text-white tracking-tight">Skyline Sports Club</div>
-              <div className="text-[10px] text-gray-400 font-medium">Secure Payment Gateway</div>
+              <div className="text-[16px] font-bold text-gray-900 tracking-tight">Skyline Sports Club</div>
+              <div className="text-[10px] text-gray-500 font-medium">Secure Payment Gateway</div>
             </div>
           </Link>
 
           {!confirmedData && (
             <Link
               to="/user/clubs"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#714B67] px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-all"
             >
               <ChevronLeft size={16} /> Change Club or Plan
             </Link>
@@ -178,36 +183,36 @@ export default function PaymentGateway() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-4xl w-full mx-auto px-4 py-12 flex-1 flex flex-col justify-center">
+      <main className="max-w-4xl w-full mx-auto px-4 py-10 flex-1 flex flex-col justify-center">
         {/* If payment already confirmed, show the Generated Member ID & Digital Pass */}
         {confirmedData ? (
-          <div className="rounded-3xl p-8 sm:p-12 bg-gradient-to-b from-[#1E1838] via-[#141028] to-[#0F0C20] border-2 border-emerald-500/40 shadow-2xl shadow-emerald-500/20 text-center animate-fade-in">
+          <div className="rounded-2xl p-8 sm:p-10 bg-white border border-[#E5E7EB] shadow-xs text-center animate-fade-in">
             {/* Success icon */}
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 mx-auto mb-6 shadow-xl shadow-emerald-500/30 flex items-center justify-center">
-              <CheckCircle2 size={40} className="text-white" />
+            <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 mx-auto mb-4 flex items-center justify-center">
+              <CheckCircle2 size={36} className="text-emerald-600" />
             </div>
 
-            <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold uppercase tracking-wider">
               Payment Confirmed &amp; Membership Activated
             </span>
 
-            <h1 className="text-3xl sm:text-4xl font-black text-white mt-4 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-3 tracking-tight">
               Welcome to {confirmedData.club.name}!
             </h1>
 
-            <p className="text-sm text-gray-300 mt-2 max-w-lg mx-auto">
+            <p className="text-xs sm:text-sm text-gray-500 mt-2 max-w-lg mx-auto">
               Your transaction has been processed and your official membership ID has been generated in the sports club database.
             </p>
 
             {/* Generated Member ID Highlight Box */}
-            <div className="my-8 p-6 rounded-2xl bg-white/[0.04] border border-white/15 max-w-md mx-auto shadow-inner text-center">
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block">
+            <div className="my-6 p-5 rounded-xl bg-purple-50 border border-purple-200 max-w-md mx-auto text-center">
+              <span className="text-[11px] font-bold text-[#714B67] uppercase tracking-widest block">
                 Official Generated Member ID
               </span>
-              <div className="flex items-center justify-center gap-3 mt-2">
+              <div className="flex items-center justify-center gap-3 mt-1.5">
                 <span
                   id="generated-member-id"
-                  className="text-2xl sm:text-3xl font-black font-mono tracking-wider bg-gradient-to-r from-amber-300 via-purple-300 to-pink-300 bg-clip-text text-transparent"
+                  className="text-2xl sm:text-3xl font-mono font-bold tracking-wider text-[#714B67]"
                 >
                   {confirmedData.memberId}
                 </span>
@@ -215,45 +220,43 @@ export default function PaymentGateway() {
                   type="button"
                   id="copy-member-id-btn"
                   onClick={copyMemberId}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg bg-white border border-purple-200 hover:bg-purple-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
                   title="Copy Member ID"
                 >
-                  {copiedId ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+                  {copiedId ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                 </button>
               </div>
               {copiedId && (
-                <span className="text-[11px] font-bold text-emerald-400 mt-1 block">
+                <span className="text-[11px] font-bold text-emerald-600 mt-1 block">
                   ✓ Member ID copied to clipboard!
                 </span>
               )}
             </div>
 
             {/* Digital Membership Pass Card */}
-            <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-purple-900/60 via-indigo-950/80 to-[#120E26] border border-purple-500/40 max-w-lg mx-auto text-left shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 blur-2xl rounded-full" />
-              
+            <div className="rounded-2xl p-6 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white max-w-lg mx-auto text-left shadow-lg relative overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center font-black text-black text-xs">
+                  <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center font-bold text-slate-900 text-xs">
                     S
                   </div>
                   <div>
-                    <div className="text-sm font-black text-white">{confirmedData.club.name}</div>
-                    <div className="text-[10px] text-gray-400">{confirmedData.club.sport}</div>
+                    <div className="text-sm font-bold text-white">{confirmedData.club.name}</div>
+                    <div className="text-[10px] text-gray-300">{confirmedData.club.sport}</div>
                   </div>
                 </div>
-                <span className="text-[11px] font-black uppercase tracking-wider px-3 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
                   {confirmedData.tier} TIER
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 my-5 text-xs">
+              <div className="grid grid-cols-2 gap-4 my-4 text-xs">
                 <div>
                   <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Member Name</span>
                   <span className="font-bold text-white text-sm mt-0.5 block">{confirmedData.fullName}</span>
                 </div>
                 <div>
-                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Membership Status</span>
+                  <span className="text-gray-400 block text-[10px] uppercase tracking-wider">Status</span>
                   <span className="inline-flex items-center gap-1 font-bold text-emerald-400 text-xs mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     ACTIVE MEMBER
@@ -274,35 +277,31 @@ export default function PaymentGateway() {
               </div>
 
               {/* Barcode & Security stamp */}
-              <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
                 <div className="space-y-1">
-                  <div className="h-6 flex items-center gap-1">
-                    {[16, 24, 18, 30, 14, 28, 20, 32, 18, 26, 12, 28, 22, 16, 30, 24, 18].map((h, i) => (
-                      <div key={i} className="w-1 bg-white/70 rounded-full" style={{ height: `${h}px` }} />
-                    ))}
-                  </div>
                   <span className="text-[9px] text-gray-400 font-mono tracking-widest block">
                     TXN: {confirmedData.payment.transactionRef}
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-purple-300 font-bold block">Verified Member</span>
                   <span className="text-[9px] text-gray-400 block">Amount: ₹{confirmedData.amountPaid.toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
               <Link
-                to="/"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-white/10 hover:bg-white/20 transition-all text-center"
+                to="/member/dashboard"
+                id="goto-member-dashboard-btn"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider text-white bg-[#714B67] hover:bg-[#57344f] shadow-xs hover:shadow-sm transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Back to Skyline Home
+                <span>Go to Member Dashboard</span>
+                <ArrowRight size={14} />
               </Link>
               <Link
                 to="/user/clubs"
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-gradient-to-r from-[#7C3AED] via-[#9333EA] to-[#EC4899] shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition-all text-center"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 transition-all text-center"
               >
                 Explore Other Clubs
               </Link>
@@ -312,29 +311,29 @@ export default function PaymentGateway() {
           /* Payment Entry Form */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Plan Summary */}
-            <div className="lg:col-span-5 rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-transparent border border-white/15 shadow-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[11px] font-bold text-purple-300 mb-3">
-                <Sparkles size={12} className="text-amber-400" />
+            <div className="lg:col-span-5 rounded-2xl p-6 sm:p-8 bg-white border border-[#E5E7EB] shadow-xs">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-[11px] font-bold text-[#714B67] mb-3">
+                <Sparkles size={12} className="text-amber-500" />
                 <span>Selected Membership</span>
               </div>
 
-              <h2 className="text-2xl font-black text-white">{selectedMembership?.tierName || 'Gold All-Access'}</h2>
-              <div className="text-xs text-purple-300 font-semibold mt-1">
+              <h2 className="text-xl font-bold text-gray-900">{selectedMembership?.tierName || 'Gold All-Access'}</h2>
+              <div className="text-xs text-[#714B67] font-semibold mt-1">
                 At {selectedMembership?.clubName || 'Skyline Sports Club'}
               </div>
 
-              <div className="my-6 pb-6 border-b border-white/10">
+              <div className="my-5 pb-5 border-b border-gray-200">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-gray-400">Plan Membership Fee:</span>
-                  <span className="text-3xl font-black text-white">₹{planPrice.toLocaleString()}</span>
+                  <span className="text-xs text-gray-500">Plan Membership Fee:</span>
+                  <span className="text-3xl font-extrabold text-gray-900">₹{planPrice.toLocaleString()}</span>
                 </div>
-                <div className="flex items-baseline justify-between text-xs text-gray-400 mt-2">
+                <div className="flex items-baseline justify-between text-xs text-gray-500 mt-2">
                   <span>Duration:</span>
-                  <span className="text-gray-200 font-medium">30 Days Active Access</span>
+                  <span className="text-gray-800 font-medium">30 Days Active Access</span>
                 </div>
-                <div className="flex items-baseline justify-between text-xs text-gray-400 mt-1">
+                <div className="flex items-baseline justify-between text-xs text-gray-500 mt-1">
                   <span>Club Location:</span>
-                  <span className="text-gray-200 font-medium truncate max-w-[180px]">
+                  <span className="text-gray-800 font-medium truncate max-w-[180px]">
                     {selectedMembership?.clubAddress || 'Sports City'}
                   </span>
                 </div>
@@ -342,61 +341,61 @@ export default function PaymentGateway() {
 
               {/* Inclusions */}
               <div className="space-y-2 text-xs">
-                <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                <div className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
                   Tier Privileges Included:
                 </div>
                 {selectedMembership?.features?.slice(0, 4).map((f, i) => (
-                  <div key={i} className="flex items-start gap-2 text-gray-300">
-                    <CheckCircle2 size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div key={i} className="flex items-start gap-2 text-gray-600">
+                    <CheckCircle2 size={14} className="text-emerald-600 flex-shrink-0 mt-0.5" />
                     <span className="leading-snug">{f}</span>
                   </div>
                 ))}
               </div>
 
               {/* Prompt instruction badge */}
-              <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300/90 leading-relaxed">
+              <div className="mt-5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed">
                 💡 <strong>Payment Step:</strong> Enter the payment amount (<strong>₹{planPrice.toLocaleString()}</strong>) in the payment box to highlight and enable the Confirm button.
               </div>
             </div>
 
             {/* Right Column: Payment Gateway Inputs */}
-            <div className="lg:col-span-7 rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-white/[0.08] via-white/[0.04] to-transparent border border-white/15 shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between pb-5 border-b border-white/10 mb-6">
+            <div className="lg:col-span-7 rounded-2xl p-6 sm:p-8 bg-white border border-[#E5E7EB] shadow-xs">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-5">
                 <div>
-                  <h3 className="text-xl font-black text-white">Payment Gateway</h3>
-                  <p className="text-xs text-gray-400">Enter payment according to selected plan</p>
+                  <h3 className="text-lg font-bold text-gray-900">Payment Gateway</h3>
+                  <p className="text-xs text-gray-500">Enter payment according to selected plan</p>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-emerald-400 font-semibold">
+                <div className="flex items-center gap-1 text-xs text-emerald-600 font-semibold">
                   <ShieldCheck size={16} />
                   <span>256-bit Encrypted</span>
                 </div>
               </div>
 
               {error && (
-                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-start gap-2.5">
-                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5 text-red-400" />
+                <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs flex items-start gap-2">
+                  <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form onSubmit={handleConfirmPayment} className="space-y-5">
+              <form onSubmit={handleConfirmPayment} className="space-y-4">
                 {/* 1. REQUIRED: Payment Amount Input Field */}
-                <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-black uppercase tracking-wider text-white">
+                <div className="p-4 rounded-xl bg-gray-50 border border-gray-200">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-gray-900 uppercase tracking-wider">
                       Enter Payment Amount (₹) *
                     </label>
                     <button
                       type="button"
                       id="fill-exact-amount-btn"
                       onClick={handleFillExactAmount}
-                      className="text-[11px] font-bold text-purple-400 hover:text-purple-300 underline"
+                      className="text-[11px] font-bold text-[#714B67] hover:underline cursor-pointer"
                     >
                       Fill Exact Plan Amount (₹{planPrice.toLocaleString()})
                     </button>
                   </div>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-gray-500">
                       ₹
                     </span>
                     <input
@@ -406,10 +405,10 @@ export default function PaymentGateway() {
                       value={enteredAmount}
                       onChange={(e) => setEnteredAmount(e.target.value)}
                       placeholder={`Enter ${planPrice}`}
-                      className={`w-full pl-9 pr-4 py-3 rounded-xl bg-white/5 border text-white text-lg font-bold placeholder-gray-500 focus:outline-none transition-all ${
+                      className={`w-full pl-8 pr-4 py-2.5 rounded-lg bg-white border text-gray-900 text-base font-bold placeholder-gray-400 focus:outline-none transition-all ${
                         isAmountMatched
-                          ? 'border-emerald-500 ring-2 ring-emerald-500/40 bg-emerald-500/5'
-                          : 'border-white/15 focus:border-purple-500'
+                          ? 'border-emerald-500 ring-2 ring-emerald-200 bg-emerald-50/20'
+                          : 'border-gray-300 focus:border-[#714B67]'
                       }`}
                     />
                   </div>
@@ -417,12 +416,12 @@ export default function PaymentGateway() {
                   {/* Verification Feedback */}
                   <div className="mt-2 text-xs">
                     {isAmountMatched ? (
-                      <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                      <span className="text-emerald-600 font-bold flex items-center gap-1.5">
                         <CheckCircle2 size={14} />
                         Amount Matched Plan Fee! Ready to confirm.
                       </span>
                     ) : (
-                      <span className="text-gray-400">
+                      <span className="text-gray-500">
                         Required plan fee: <strong>₹{planPrice.toLocaleString()}</strong>. (Type {planPrice} to highlight confirm button).
                       </span>
                     )}
@@ -431,46 +430,46 @@ export default function PaymentGateway() {
 
                 {/* 2. Payment Method Selector */}
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                     Payment Method
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-2.5">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('CARD')}
-                      className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      className={`p-2.5 rounded-lg border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
                         paymentMethod === 'CARD'
-                          ? 'border-purple-500 bg-purple-500/20 text-white'
-                          : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'
+                          ? 'border-[#714B67] bg-purple-50 text-[#714B67]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <CreditCard size={18} />
-                      <span>Credit/Debit Card</span>
+                      <CreditCard size={16} />
+                      <span>Card</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('UPI')}
-                      className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      className={`p-2.5 rounded-lg border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
                         paymentMethod === 'UPI'
-                          ? 'border-purple-500 bg-purple-500/20 text-white'
-                          : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'
+                          ? 'border-[#714B67] bg-purple-50 text-[#714B67]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <QrCode size={18} />
+                      <QrCode size={16} />
                       <span>UPI / QR</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('NETBANKING')}
-                      className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                      className={`p-2.5 rounded-lg border text-xs font-bold flex flex-col items-center gap-1 transition-all cursor-pointer ${
                         paymentMethod === 'NETBANKING'
-                          ? 'border-purple-500 bg-purple-500/20 text-white'
-                          : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'
+                          ? 'border-[#714B67] bg-purple-50 text-[#714B67]'
+                          : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                       }`}
                     >
-                      <Building2 size={18} />
+                      <Building2 size={16} />
                       <span>Net Banking</span>
                     </button>
                   </div>
@@ -478,34 +477,34 @@ export default function PaymentGateway() {
 
                 {/* 3. Payment Details Inputs */}
                 {paymentMethod === 'CARD' && (
-                  <div className="space-y-3.5">
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Card Number
                       </label>
                       <input
                         type="text"
                         value={cardNumber}
                         onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs font-mono focus:outline-none focus:border-[#714B67]"
                         placeholder="4242 4242 4242 4242"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
                           Expiry Date
                         </label>
                         <input
                           type="text"
                           value={cardExpiry}
                           onChange={(e) => setCardExpiry(e.target.value)}
-                          className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500"
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs font-mono focus:outline-none focus:border-[#714B67]"
                           placeholder="MM/YY"
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
                           CVV
                         </label>
                         <input
@@ -513,20 +512,20 @@ export default function PaymentGateway() {
                           maxLength="4"
                           value={cardCvv}
                           onChange={(e) => setCardCvv(e.target.value)}
-                          className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-purple-500"
+                          className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs font-mono focus:outline-none focus:border-[#714B67]"
                           placeholder="888"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Cardholder Name
                       </label>
                       <input
                         type="text"
                         value={cardName}
                         onChange={(e) => setCardName(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:outline-none focus:border-[#714B67]"
                         placeholder="Johnathan Vance"
                       />
                     </div>
@@ -535,7 +534,7 @@ export default function PaymentGateway() {
 
                 {paymentMethod === 'UPI' && (
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Enter UPI ID / VPA
                     </label>
                     <input
@@ -543,7 +542,7 @@ export default function PaymentGateway() {
                       value={upiId}
                       onChange={(e) => setUpiId(e.target.value)}
                       placeholder="e.g. member@okhdfcbank"
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:outline-none focus:border-[#714B67]"
                     />
                     <div className="flex gap-2 mt-2">
                       {['Google Pay', 'PhonePe', 'Paytm', 'BHIM'].map((app) => (
@@ -551,7 +550,7 @@ export default function PaymentGateway() {
                           key={app}
                           type="button"
                           onClick={() => setUpiId(`user@${app.toLowerCase().replace(' ', '')}`)}
-                          className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] text-gray-300 hover:bg-white/10"
+                          className="px-2.5 py-1 rounded bg-gray-100 hover:bg-gray-200 border border-gray-200 text-[10px] text-gray-700 cursor-pointer"
                         >
                           {app}
                         </button>
@@ -562,10 +561,10 @@ export default function PaymentGateway() {
 
                 {paymentMethod === 'NETBANKING' && (
                   <div>
-                    <label className="block text-[11px] font-bold uppercase text-gray-400 mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
                       Select Bank
                     </label>
-                    <select className="w-full px-4 py-2.5 rounded-xl bg-[#1A1633] border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500">
+                    <select className="w-full px-3.5 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:outline-none focus:border-[#714B67]">
                       <option>HDFC Bank</option>
                       <option>ICICI Bank</option>
                       <option>State Bank of India</option>
@@ -575,28 +574,26 @@ export default function PaymentGateway() {
                   </div>
                 )}
 
-                {/* 4. DYNAMIC CONFIRM BUTTON:
-                   "after payment is written give a button that says confirm.
-                   When user enters the payment acc to the given plan highlight that confirm button." */}
+                {/* 4. DYNAMIC CONFIRM BUTTON */}
                 <div className="pt-2">
                   <button
                     type="submit"
                     disabled={loading || !isAmountMatched}
                     id="confirm-payment-btn"
-                    className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300 ${
+                    className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
                       isAmountMatched
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 text-black shadow-2xl shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] ring-4 ring-emerald-400/30 animate-pulse'
-                        : 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/10'
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-4 ring-emerald-100'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                     }`}
                   >
                     {loading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         <span>Processing &amp; Generating Member ID...</span>
                       </>
                     ) : isAmountMatched ? (
                       <>
-                        <CheckCircle2 size={18} className="text-black" />
+                        <CheckCircle2 size={18} className="text-white" />
                         <span>Confirm Payment (₹{planPrice.toLocaleString()})</span>
                       </>
                     ) : (
@@ -614,7 +611,7 @@ export default function PaymentGateway() {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 border-t border-white/10 text-center text-xs text-gray-500">
+      <footer className="py-4 border-t border-[#E5E7EB] bg-white text-center text-xs text-gray-500">
         Skyline Sports Club • Multi-Tenant Sports SaaS Architecture
       </footer>
     </div>

@@ -10,6 +10,9 @@ import { HTTP_STATUS, ERROR_CODES } from "../config/constants.js";
 import { CourtService } from "./courtService.js";
 import { BookingService } from "./bookingService.js";
 import { AuditService } from "./auditService.js";
+import { CafeService } from "./cafeService.js";
+import { ProductService } from "./productService.js";
+import { StaffService } from "./staffService.js";
 
 export class DashboardService {
   /**
@@ -68,16 +71,102 @@ export class DashboardService {
       0
     );
 
-    // Calculate dynamic KPIs
+    // 1. Cafe metrics & revenue
+    let cafeMetrics = {
+      totalRevenue: 0,
+      todayRevenue: 0,
+      averageOrderValue: 0,
+      preparingOrders: 0,
+      servedOrders: 0,
+      totalOrders: 0,
+    };
+    try {
+      const cafeData = await CafeService.getOrders(clubId);
+      if (cafeData?.metrics) {
+        cafeMetrics = {
+          totalRevenue: cafeData.metrics.totalRevenue || 0,
+          todayRevenue: cafeData.metrics.todayRevenue || 0,
+          averageOrderValue: cafeData.metrics.averageOrderValue || 0,
+          preparingOrders: cafeData.metrics.preparingOrders || 0,
+          servedOrders: cafeData.metrics.servedOrders || 0,
+          totalOrders: cafeData.orders?.length || 0,
+        };
+      }
+    } catch (e) {
+      console.warn("Could not load cafe metrics for dashboard:", e.message);
+    }
+
+    // 2. Inventory / Shop metrics & valuation
+    let inventoryMetrics = {
+      totalProducts: 0,
+      totalStock: 0,
+      lowStockCount: 0,
+      outOfStockCount: 0,
+      totalAlerts: 0,
+      totalValuation: 0,
+    };
+    try {
+      const productData = await ProductService.getProducts(clubId);
+      if (productData?.metrics) {
+        inventoryMetrics = productData.metrics;
+      }
+    } catch (e) {
+      console.warn("Could not load inventory metrics for dashboard:", e.message);
+    }
+
+    // 3. HR & Staff workforce metrics
+    let hrMetrics = {
+      totalEmployees: 0,
+      activeEmployees: 0,
+      departmentsCount: 0,
+      pendingLeavesCount: 0,
+    };
+    try {
+      const employees = await StaffService.getEmployees(clubId);
+      const leaves = await StaffService.getLeaves(clubId);
+      const depts = await StaffService.getDepartments(clubId);
+      hrMetrics = {
+        totalEmployees: employees?.length || 0,
+        activeEmployees: employees?.filter((e) => e.status === "ACTIVE")?.length || 0,
+        departmentsCount: depts?.length || 0,
+        pendingLeavesCount: leaves?.filter((l) => l.status === "PENDING")?.length || 0,
+      };
+    } catch (e) {
+      console.warn("Could not load HR metrics for dashboard:", e.message);
+    }
+
+    // 4. Membership payments revenue
+    let membershipRevenue = 0;
+    try {
+      const payments = await prisma.memberPayment.findMany({
+        where: { clubId, status: "COMPLETED" },
+        select: { amount: true },
+      });
+      membershipRevenue = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    } catch (e) {
+      console.warn("Could not load member payment stats:", e.message);
+    }
+
+    // Total combined revenue
+    const totalClubRevenue = bookingRevenue + cafeMetrics.totalRevenue + membershipRevenue;
+
+    // Calculate dynamic KPIs for Super Admin
     const kpis = {
       activeMembers: activeUserCount,
       expiringSoon: 0,
       todayBookingsCount: todayBookings.filter((b) => b.status !== "Cancelled").length,
       courtUtilization: avgUtilization,
-      monthlyRevenue: bookingRevenue,
-      activeTabs: moduleConfig?.bar ? 0 : 0,
-      pendingKitchenOrders: moduleConfig?.bar ? 0 : 0,
-      lowStockCount: moduleConfig?.shop ? 0 : 0,
+      monthlyRevenue: totalClubRevenue,
+      totalClubRevenue,
+      cafeRevenue: cafeMetrics.totalRevenue,
+      cafeTodayRevenue: cafeMetrics.todayRevenue,
+      inventoryValuation: inventoryMetrics.totalValuation,
+      inventoryProductsCount: inventoryMetrics.totalProducts,
+      lowStockCount: inventoryMetrics.lowStockCount,
+      hrTotalStaff: hrMetrics.totalEmployees,
+      hrPendingLeaves: hrMetrics.pendingLeavesCount,
+      activeTabs: moduleConfig?.bar ? cafeMetrics.preparingOrders : 0,
+      pendingKitchenOrders: cafeMetrics.preparingOrders,
       newLeadsCount: 0,
     };
 
@@ -89,6 +178,20 @@ export class DashboardService {
         message: "No courts configured yet. Set up your courts in Court Bookings to enable reservations.",
       });
     }
+    if (inventoryMetrics.lowStockCount > 0) {
+      alerts.push({
+        id: "alert-low-stock",
+        level: "warning",
+        message: `${inventoryMetrics.lowStockCount} inventory items have reached or fallen below minimum stock thresholds.`,
+      });
+    }
+    if (hrMetrics.pendingLeavesCount > 0) {
+      alerts.push({
+        id: "alert-pending-leaves",
+        level: "info",
+        message: `${hrMetrics.pendingLeavesCount} employee leave application(s) awaiting HR review.`,
+      });
+    }
 
     return {
       club: {
@@ -98,6 +201,9 @@ export class DashboardService {
         email: club.email,
       },
       kpis,
+      cafeMetrics,
+      inventoryMetrics,
+      hrMetrics,
       courts,
       todayBookings,
       courtUtilization,

@@ -6,11 +6,14 @@
 import express from "express";
 import { FinanceController } from "../controllers/financeController.js";
 import { authenticate } from "../middleware/authenticate.js";
+import { authorizeRole } from "../middleware/authorizeRole.js";
+import { ROLES } from "../config/constants.js";
 
 const router = express.Router();
 
-// All finance endpoints require valid session authentication
+// All finance endpoints require valid session authentication and SUPER_ADMIN or ACCOUNTANT role
 router.use(authenticate);
+router.use(authorizeRole(ROLES.SUPER_ADMIN, ROLES.ACCOUNTANT));
 
 // Financial summary KPIs & metrics
 router.get("/summary", FinanceController.getSummary);
